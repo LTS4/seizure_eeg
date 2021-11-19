@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
-import click
+"""Main module for dataset creation"""
 import logging
 from pathlib import Path
+
+import click
 from dotenv import find_dotenv, load_dotenv
 
 
@@ -17,6 +19,7 @@ def main(input_filepath, output_filepath):
 
 
 if __name__ == '__main__':
+    #pylint: disable=no-value-for-parameter
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     logging.basicConfig(level=logging.INFO, format=log_fmt)
 
