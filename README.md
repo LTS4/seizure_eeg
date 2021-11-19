@@ -3,8 +3,36 @@ Seizure learning
 
 Analysis and development of methods for seizure detection and prediction
 
-Project Organization
-------------
+
+## Data processing
+
+### TUH data download
+
+Instruction for downloading the TUH seizure corpus can be found on the [TUH EEG Corpus website][tuh_web].
+After registration, you will get a password for the `nedc` username.
+
+We provide an automated script for downloading the data in `rsync_nedc.sh`.
+It keeps querying the server until the download of the desired corpus is complete.
+It expects two arguments: `SOURCE` and `TARGET`, e.g.
+```sh
+# rsync_nedc.sh SOURCE TARGET
+bash rsync_nedc.sh tuh_eeg_seizure/v1.5.2 data/raw/TUSZ
+```
+
+It then asks for the password.
+To avoid re-prompting the password continuously, we also provide the `rsync_answer.exp` script.
+In addition to `SOURCE` and `TARGET` it expects the `NEDC_PASSWORD`:
+```sh
+# expect rsync_answer.exp SOURCE TARGET PASSWORD
+expect rsync_answer.exp tuh_eeg_seizure/v1.5.2 data/raw/TUSZ password1234
+```
+
+If you get a `"Permission denied, please try again."` message it is probably because your password is wrong.
+
+[tuh_web]: https://isip.piconepress.com/projects/tuh_eeg/html/downloads.shtml
+
+
+## Project Organization
 
     ├── LICENSE
     ├── Makefile           <- Makefile with commands like `make data` or `make train`
