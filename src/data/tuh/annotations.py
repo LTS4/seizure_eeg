@@ -1,38 +1,26 @@
-"""Dataclasses related to annotations and reader function"""
+"""Utilities to read edf annotations.
 
-from collections import defaultdict
+The main purpose is to produce a dataset whose entries have this structure:
+
+======= ======= ======= =======  ===== ========== ======== ========= =============
+Multiindex                       Columns
+-------------------------------  -------------------------------------------------
+patient session channel segment  label start_time end_time file_path sampling_rate
+======= ======= ======= =======  ===== ========== ======== ========= =============
+"""
+
 import re
 from ast import literal_eval
-from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 
 import numpy as np
+import pandas as pd
+from pandera import check_types
+from pandera.typing import DataFrame
 
-@dataclass
-class Labels:
-    """Dataclass containing seizure label and start/stop times"""
-    start: float
-    stop: float
-    label: str
-
-@dataclass
-class Annotations:
-    """
-    Dataclass containing:
-        - user_id
-        - date
-        - session_id
-        - file_name
-        - dictionary of *montage* -> `Labels`
-    """
-    user_id: str
-    date: datetime
-    session_id: str
-    file_id: str
-
-    labels_map: Dict[str, List[Labels]]
+from ..schemas import AnnotationSchema, LabelSchema
 
 
 def extract_session_date(string: str) -> Tuple[str, datetime]:
@@ -48,27 +36,44 @@ def extract_session_date(string: str) -> Tuple[str, datetime]:
     return session_id, date
 
 
-def read_tse(tse_path: Path) -> List[Labels]:
+@check_types
+def concat_labels(labels_list: List[dict]) -> DataFrame[LabelSchema]:
+    """Create a dataset from a list of labels dictionaries"""
+    # pd.DataFrame(columns=["channel", "label", "start_time", "end_time"])
+    df = pd.DataFrame(labels_list)
+    return df.assign(segment=df.groupby("channel").cumcount())
+
+
+@check_types
+def read_tse(tse_path: Path) -> DataFrame[LabelSchema]:
     """Extract global labels and timestamps from .tse file"""
     labels = []
+
     for line in tse_path.read_text().splitlines():
         if line and not line.startswith("version"):
             split = line.split(" ")
             labels.append(
-                Labels(split[0], split[1], split[2])
+                dict(
+                    channel="general",
+                    label=split[2],
+                    start_time=float(split[0]),
+                    end_time=float(split[1]),
+                )
             )
 
-    return labels
+    return concat_labels(labels)
 
 
 REGEX_LABEL = (
     r"\{(?P<level>\d+), (?P<unk>\d+), (?P<start>\d+\.\d{4}), "
-    r"(?P<stop>\d+\.\d{4}), (?P<montage_n>\d+), (?P<oh_sym>\[.*\])\}"
+    r"(?P<end>\d+\.\d{4}), (?P<montage_n>\d+), (?P<oh_sym>\[.*\])\}"
 )
 REGEX_SYMBOLS = r"symbols\[(?P<level>\d+)\].*(?P<sym_dict>\{.*\})"
 REGEX_MONTAGE = r"(?P<num>\d+), (?P<montage>\w+\d*-\w+\d*):"
 
-def read_lbl(lbl_path: Path) -> Dict[str, List[Labels]]:
+
+@check_types
+def read_lbl(lbl_path: Path) -> DataFrame[LabelSchema]:
     """Parse `.lbl[_bi]` file.
 
     Args:
@@ -76,11 +81,11 @@ def read_lbl(lbl_path: Path) -> Dict[str, List[Labels]]:
 
     Returns:
         Dict[str, List[Labels]]: Dictionary with montages (i.e. strings with "<electrode1>-<electrode2>") as keys.
-            Itemes are lists of `Labels`, i.e. dataclasses containing start/stops times and seizure labels.
+            Itemes are lists of `Labels`, i.e. dataclasses containing start/ends times and seizure labels.
     """
     montages = []
     symbols = []
-    labels = defaultdict(list)
+    labels = []
 
     for line in lbl_path.read_text().splitlines():
         # All montage lines come first
@@ -106,17 +111,22 @@ def read_lbl(lbl_path: Path) -> Dict[str, List[Labels]]:
 
             level, montage_n = map(int, match.group("level", "montage_n"))
             sym_int = np.nonzero(literal_eval(match.group("oh_sym")))[0].item()
-            start, stop = map(float, match.group("start", "stop"))
+            start, end = map(float, match.group("start", "end"))
 
-            labels[montages[montage_n]].append(
-            Labels(start, stop, label=symbols[level][sym_int])
+            labels.append(
+                dict(
+                    channel=montages[montage_n],
+                    label=symbols[level][sym_int],
+                    start_time=start,
+                    end_time=end,
+                )
             )
 
-    # We convert labels to a astandard dict to prevent silent failure on missing montages
-    return dict(labels)
+    return concat_labels(labels)
 
 
-def read_labels(edf_path: Path, binary: bool) -> Dict[str, List[Labels]]:
+@check_types
+def read_labels(edf_path: Path, binary: bool) -> DataFrame[LabelSchema]:
     """Retrieve seizure labels parsing the ``.tse[_bi]`` and the ``.lbl[_bi]`` files corresponding to the ``.edf``
     file at *file_path*.
 
@@ -137,39 +147,28 @@ def read_labels(edf_path: Path, binary: bool) -> Dict[str, List[Labels]]:
     lbl_path = edf_path.with_suffix(lbl_suffix)
     assert lbl_path.exists(), f"File not found: {lbl_path}"
 
-    *_, labels = read_lbl(lbl_path)
-    labels["general"] = read_tse(tse_path)
+    return pd.concat(
+        [
+            read_tse(tse_path),
+            read_lbl(lbl_path),
+        ]
+    )
 
-    return labels
 
-
-
-def get_edf_annotations(edf_path: Path, binary: bool) -> Annotations:
-    """Use edf path to retrieve annotations.
-    Gathered info:
-        - user id
-        - session id
-        - date
-        - time-stamps to label mapping:
-            - general
-            - per node
+@check_types
+def get_edf_annotations(edf_path: Path, binary: bool) -> DataFrame[AnnotationSchema]:
+    """Use edf path to retrieve EEG scan info and annotations.
 
     Args:
-        edf_path (Path): [description]
-        binary (bool): [description]
-
-    Raises:
-        NotImplementedError: [description]
+        edf_path (Path): Path to ``.edf`` file
+        binary (bool): Whether to retieve *bkgd*-vs-*seiz* or complete labels
 
     Returns:
-        Dict[str, Any]: [description]
+        DataFrame[AnnotationSchema]: Annotations per segment and per channel
     """
-    file_id = edf_path.stem
-    user_id = edf_path.parents[1].stem
-    session_id, date = extract_session_date(edf_path.parents[0].stem)
-    labels = read_labels(edf_path, binary)
+    df = read_labels(edf_path, binary)
 
-    return Annotations(
-        user_id, date, session_id, file_id=file_id,
-        labels_map=labels,
-    )
+    df["patient"] = edf_path.parents[1].stem
+    df["session"], df["date"] = extract_session_date(edf_path.parents[0].stem)
+
+    return df.set_index(["patient", "session", "channel", "segment"])
