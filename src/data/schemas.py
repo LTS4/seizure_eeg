@@ -1,6 +1,6 @@
 """Pandera schemas for data validation"""
 import pandera as pa
-from pandera.typing import Index, Series, DateTime
+from pandera.typing import DateTime, Index, Series
 
 
 class LabelSchema(pa.SchemaModel):
