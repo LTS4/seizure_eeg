@@ -117,6 +117,17 @@ def read_lbl(lbl_path: Path) -> Dict[str, List[Labels]]:
 
 
 def read_labels(edf_path: Path, binary: bool) -> Dict[str, List[Labels]]:
+    """Retrieve seizure labels parsing the ``.tse[_bi]`` and the ``.lbl[_bi]`` files corresponding to the ``.edf``
+    file at *file_path*.
+
+    Args:
+        edf_path (Path): Path to the ``.edf`` file
+        binary (bool): Wheter to  use the ``.*_bi`` version of the label files,
+            which differentiate only *bkgd* vs *seiz*
+
+    Returns:
+        Dict[str, List[Labels]]: dictionary of montage symbols and list of corresponding `Labels`
+    """
     tse_suffix = ".tse_bi" if binary else ".tse"
     lbl_suffix = ".lbl_bi" if binary else ".lbl"
 
