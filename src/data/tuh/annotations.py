@@ -21,6 +21,7 @@ from pandera import check_types
 from pandera.typing import DataFrame
 
 from ..schemas import AnnotationSchema, LabelSchema
+from .constants import REGEX_LABEL, REGEX_MONTAGE, REGEX_SYMBOLS
 
 
 def extract_session_date(string: str) -> Tuple[str, datetime]:
@@ -62,14 +63,6 @@ def read_tse(tse_path: Path) -> DataFrame[LabelSchema]:
             )
 
     return concat_labels(labels)
-
-
-REGEX_LABEL = (
-    r"\{(?P<level>\d+), (?P<unk>\d+), (?P<start>\d+\.\d{4}), "
-    r"(?P<end>\d+\.\d{4}), (?P<montage_n>\d+), (?P<oh_sym>\[.*\])\}"
-)
-REGEX_SYMBOLS = r"symbols\[(?P<level>\d+)\].*(?P<sym_dict>\{.*\})"
-REGEX_MONTAGE = r"(?P<num>\d+), (?P<montage>\w+\d*-\w+\d*):"
 
 
 @check_types
