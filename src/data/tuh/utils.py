@@ -15,7 +15,7 @@ def list_all_edf_files(root_path: Path) -> List[Path]:
     """
     filelist = [
         Path(dirpath) / file
-        for dirpath, _, filenames in os.walk(root_path)
+        for dirpath, _, filenames in os.walk(root_path, followlinks=True)
         for file in filenames
         if file.endswith("edf")
     ]
