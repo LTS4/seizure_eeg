@@ -128,17 +128,22 @@ def read_labels(edf_path: Path, binary: bool) -> DataFrame[LabelSchema]:
         binary (bool): Wheter to  use the ``.*_bi`` version of the label files,
             which differentiate only *bkgd* vs *seiz*
 
+    Raises:
+        IOError: If one of the labels files is missing
+
     Returns:
-        Dict[str, List[Labels]]: dictionary of montage symbols and list of corresponding `Labels`
+        DataFrame[LabelSchema]: Dataframe of montage symbols with labels and timestamps
     """
     tse_suffix = ".tse_bi" if binary else ".tse"
     lbl_suffix = ".lbl_bi" if binary else ".lbl"
 
     tse_path = edf_path.with_suffix(tse_suffix)
-    assert tse_path.exists(), f"File not found: {tse_path}"
+    if not tse_path.exists():
+        raise IOError(f"File not found: {tse_path}")
 
     lbl_path = edf_path.with_suffix(lbl_suffix)
-    assert lbl_path.exists(), f"File not found: {lbl_path}"
+    if not lbl_path.exists():
+        raise IOError(f"File not found: {lbl_path}")
 
     return pd.concat(
         [
@@ -155,6 +160,9 @@ def get_edf_annotations(edf_path: Path, binary: bool) -> DataFrame[AnnotationSch
     Args:
         edf_path (Path): Path to ``.edf`` file
         binary (bool): Whether to retieve *bkgd*-vs-*seiz* or complete labels
+
+    Raises:
+        IOError: If one of the labels files is missing
 
     Returns:
         DataFrame[AnnotationSchema]: Annotations per segment and per channel

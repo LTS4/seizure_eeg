@@ -21,3 +21,8 @@ def list_all_edf_files(root_path: Path) -> List[Path]:
     ]
 
     return filelist
+
+
+def lower_na(df, column: str):
+    df[column] = df[column].fillna("null").apply(str.lower)
+    return df

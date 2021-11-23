@@ -1,10 +1,14 @@
-"""Constants for TIUH data retrieval"""
+"""Constants for TUSZ data retrieval"""
 
 ############################################################
 # FILE EXTENSIONS
 SUFFIXES = [".edf", ".tse", ".lbl"]
 SUFFIXES_BINARY = [".edf", ".tse_bi", ".lbl_bi"]
 
+############################################################
+# SEIZURE TYPES
+
+SEIZURE_VOC = {}
 
 ############################################################
 # REGULAR EXPRESSIONS
