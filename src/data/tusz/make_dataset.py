@@ -13,7 +13,7 @@ from ...config import TUSZ_VERSION, Signals
 from ...run import run
 from .annotations import get_edf_annotations
 from .io import read_seiz_vocabulary
-from .signals import extract_segment, get_signals_and_info
+from .signals import extract_segment, get_sampled_signals_and_names
 from .utils import list_all_edf_files
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 def process_file(edf_path: Path, seiz_voc: Dict[str, int], sampling_rate: int, *, binary: bool):
     """Read annotations and signals, then create label masks for signals and save them"""
     annotations = get_edf_annotations(edf_path, binary)
-    signals, signal_channels = get_signals_and_info(edf_path, sampling_rate)
+    signals, signal_channels = get_sampled_signals_and_names(edf_path, sampling_rate)
 
     # General labels
     # annotations_general = annotations.loc[idx[:, :, "general", :]]

@@ -10,7 +10,7 @@ from scipy.signal import resample
 # DATA LOADING
 
 
-def get_signals_and_info(edf_path: Path, sampling_rate: int) -> Tuple[np.ndarray, List[str]]:
+def get_sampled_signals_and_names(edf_path: Path, sampling_rate: int) -> Tuple[np.ndarray, List[str]]:
     """Read ``.edf`` file and retrieve EEG scans and relative information.
 
     Args:
@@ -26,10 +26,7 @@ def get_signals_and_info(edf_path: Path, sampling_rate: int) -> Tuple[np.ndarray
     """
     edf_reader = pyedflib.EdfReader(str(edf_path))
 
-    signal_channels = edf_reader.getSignalLabels()
-    signals = read_eeg_signals(edf_reader)
-
-    input_sampling_rate = get_sampling_rate(edf_reader)
+    signals, signal_channels, input_sampling_rate = read_eeg_signals(edf_reader)
 
     # Resample to target rate in Hz = samples/sec. Do nothing if already at required freq
     if sampling_rate < input_sampling_rate:
@@ -41,58 +38,49 @@ def get_signals_and_info(edf_path: Path, sampling_rate: int) -> Tuple[np.ndarray
     return signals, signal_channels
 
 
-def read_eeg_signals(edf_reader: pyedflib.EdfReader) -> np.ndarray:
-    """
-    Get EEG signals in edf file
-
-    Args:
-        edf: edf object
-
-    Raises:
-        AssetionError: on unexpected input
-
-    Returns:
-        signals: shape (num_channels, num_data_points)
-
-    (c) 2021 Siyi Tang
-    """
-    n_channels = edf_reader.signals_in_file
-
-    # samples is an array of nb_samples per channel
-    nb_samples = edf_reader.getNSamples()
-    assert np.all(nb_samples == nb_samples[0]), f"Found samples of different lenghts: {nb_samples}"
-
-    signals = np.zeros((n_channels, nb_samples[0]))
-
-    for i in range(n_channels):
-        # TODO: this could raise
-        signals[i, :] = edf_reader.readSignal(i)
-    return signals
-
-
-################################################################################
-# SAMPLING RATE
-
-
-def get_sampling_rate(edf_reader: pyedflib.EdfReader) -> float:
-    """Get the unique sampling rate of the signals.
+def read_eeg_signals(edf_reader: pyedflib.EdfReader) -> Tuple[np.ndarray, List[str], int]:
+    """Get EEG signals and names from  edf file
 
     Args:
         edf_reader (pyedflib.EdfReader): EDF reader
 
     Raises:
-        AssetionError: on unexpected input
+        AssertionError: On invalid data, see messages
 
     Returns:
-        float: sampling rate
+        Tuple[np.ndarray, List[str], int]: signals, channel_names, sampling_rate
     """
+
+    signal_channels = edf_reader.getSignalLabels()
+    n_channels = edf_reader.signals_in_file
+
+    if n_channels != len(signal_channels):
+        raise AssertionError(f"Number of channels different from names: {n_channels} != {len(signal_channels)}")
+
+    # nb_samples is an array of nb_samples per channel
+    nb_samples = edf_reader.getNSamples()
+
     sampling_rates = edf_reader.getSampleFrequencies()
-    sampling_rate0 = sampling_rates[0]
 
-    assert np.all(sampling_rates == sampling_rate0), "Found different sampling rates in same file"
-    assert np.allclose(np.modf(sampling_rate0)[0], 0), "Fount noninteger sampling rate"
+    signals = []
+    signal_chnls_f = []
+    ref_rate = None
 
-    return int(sampling_rate0)
+    for i, (ch_name, ch_samples, ch_rate) in enumerate(zip(signal_channels, nb_samples, sampling_rates)):
+        if ch_name.startswith("EEG"):
+            if not signals:
+                ref_samples = ch_samples
+                ref_rate = int(ch_rate)
+
+            assert ch_samples == ref_samples, f"Channel '{ch_name}' has lenght {ch_samples}, expecting {ref_samples}"
+
+            assert np.allclose(np.modf(ch_rate)[0], 0), f"Non-integer sampling rate in {ch_name}: {ch_rate}"
+            assert ch_rate == ref_rate, f"Channel '{ch_name}' has sampling rate {ch_rate}, expecting {ref_rate}"
+
+            signal_chnls_f.append(ch_name)
+            signals.append(edf_reader.readSignal(i))
+
+    return np.array(signals), signal_chnls_f, ref_rate
 
 
 def extract_segment(signal: np.ndarray, start_time: float, end_time: float, sampling_rate: float) -> np.ndarray:
