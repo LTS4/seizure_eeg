@@ -21,7 +21,7 @@ from pandera import check_types
 from pandera.typing import DataFrame
 
 from ..schemas import AnnotationSchema, LabelSchema
-from .constants import REGEX_LABEL, REGEX_MONTAGE, REGEX_SYMBOLS
+from .constants import REGEX_LABEL, REGEX_MONTAGE, REGEX_SYMBOLS, TYPOS
 
 
 def extract_session_date(string: str) -> Tuple[str, datetime]:
@@ -45,6 +45,10 @@ def concat_labels(labels_list: List[dict]) -> DataFrame[LabelSchema]:
     return df.assign(segment=df.groupby("channel").cumcount())
 
 
+def check_label(label: str) -> str:
+    return TYPOS.get(label, label)
+
+
 @check_types
 def read_tse(tse_path: Path) -> DataFrame[LabelSchema]:
     """Extract global labels and timestamps from .tse file"""
@@ -56,7 +60,7 @@ def read_tse(tse_path: Path) -> DataFrame[LabelSchema]:
             labels.append(
                 dict(
                     channel="general",
-                    label=split[2],
+                    label=check_label(split[2]),
                     start_time=float(split[0]),
                     end_time=float(split[1]),
                 )
