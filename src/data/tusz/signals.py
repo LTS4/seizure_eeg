@@ -3,14 +3,20 @@ from pathlib import Path
 from typing import List, Tuple
 
 import numpy as np
+import pandas as pd
 import pyedflib
+from pandera import check_types
+from pandera.typing import DataFrame
 from scipy.signal import resample
+
+from ..schemas import SignalsDF
 
 ################################################################################
 # DATA LOADING
 
 
-def get_sampled_signals_and_names(edf_path: Path, sampling_rate: int) -> Tuple[np.ndarray, List[str]]:
+@check_types
+def get_resampled_signals(edf_path: Path, sampling_rate: int) -> DataFrame[SignalsDF]:
     """Read ``.edf`` file and retrieve EEG scans and relative information.
 
     Args:
@@ -26,19 +32,20 @@ def get_sampled_signals_and_names(edf_path: Path, sampling_rate: int) -> Tuple[n
     """
     edf_reader = pyedflib.EdfReader(str(edf_path))
 
-    signals, signal_channels, input_sampling_rate = read_eeg_signals(edf_reader)
+    signals, input_sampling_rate = read_eeg_signals(edf_reader)
 
     # Resample to target rate in Hz = samples/sec. Do nothing if already at required freq
     if sampling_rate < input_sampling_rate:
-        out_num = int(signals.shape[1] / input_sampling_rate * sampling_rate)
-        signals = resample(signals, num=out_num, axis=1)
+        out_num = int(len(signals) / input_sampling_rate * sampling_rate)
+        signals = pd.DataFrame(resample(signals, num=out_num, axis=0), columns=signals.columns)
     elif sampling_rate > input_sampling_rate:
         raise ValueError(f"Required sampling rate {sampling_rate} higher than file rate {input_sampling_rate}")
 
-    return signals, signal_channels
+    return signals
 
 
-def read_eeg_signals(edf_reader: pyedflib.EdfReader) -> Tuple[np.ndarray, List[str], int]:
+@check_types
+def read_eeg_signals(edf_reader: pyedflib.EdfReader) -> Tuple[DataFrame[SignalsDF], int]:
     """Get EEG signals and names from  edf file
 
     Args:
@@ -48,7 +55,7 @@ def read_eeg_signals(edf_reader: pyedflib.EdfReader) -> Tuple[np.ndarray, List[s
         AssertionError: On invalid data, see messages
 
     Returns:
-        Tuple[np.ndarray, List[str], int]: signals, channel_names, sampling_rate
+        Tuple[DataFrame, int]: signals, sampling_rate
     """
 
     signal_channels = edf_reader.getSignalLabels()
@@ -62,13 +69,12 @@ def read_eeg_signals(edf_reader: pyedflib.EdfReader) -> Tuple[np.ndarray, List[s
 
     sampling_rates = edf_reader.getSampleFrequencies()
 
-    signals = []
-    signal_chnls_f = []
+    signals = pd.DataFrame()
     ref_rate = None
 
     for i, (ch_name, ch_samples, ch_rate) in enumerate(zip(signal_channels, nb_samples, sampling_rates)):
         if ch_name.startswith("EEG"):
-            if not signals:
+            if ref_rate is None:
                 ref_samples = ch_samples
                 ref_rate = int(ch_rate)
 
@@ -77,10 +83,18 @@ def read_eeg_signals(edf_reader: pyedflib.EdfReader) -> Tuple[np.ndarray, List[s
             assert np.allclose(np.modf(ch_rate)[0], 0), f"Non-integer sampling rate in {ch_name}: {ch_rate}"
             assert ch_rate == ref_rate, f"Channel '{ch_name}' has sampling rate {ch_rate}, expecting {ref_rate}"
 
-            signal_chnls_f.append(ch_name)
-            signals.append(edf_reader.readSignal(i))
+            signals[fix_channel_name(ch_name)] = edf_reader.readSignal(i)
 
-    return np.array(signals), signal_chnls_f, ref_rate
+    return signals, ref_rate
+
+
+def fix_channel_name(name: str) -> str:
+    """Fix channel name if it has a known format.
+
+    Example:
+        - change "EEG {ch}-LE" to "EEG {ch}-REF"
+    """
+    return name.replace("-LE", "-REF")
 
 
 def extract_segment(signal: np.ndarray, start_time: float, end_time: float, sampling_rate: float) -> np.ndarray:

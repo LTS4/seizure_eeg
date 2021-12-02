@@ -20,8 +20,8 @@ import pandas as pd
 from pandera import check_types
 from pandera.typing import DataFrame
 
-from ..schemas import AnnotationSchema, LabelSchema
-from .constants import REGEX_LABEL, REGEX_MONTAGE, REGEX_SYMBOLS, TYPOS
+from ..schemas import AnnotationDF, LabelDF
+from .constants import GLOBAL_CHANNEL, REGEX_LABEL, REGEX_MONTAGE, REGEX_SYMBOLS, TYPOS
 
 
 def extract_session_date(string: str) -> Tuple[str, datetime]:
@@ -38,7 +38,7 @@ def extract_session_date(string: str) -> Tuple[str, datetime]:
 
 
 @check_types
-def concat_labels(labels_list: List[dict]) -> DataFrame[LabelSchema]:
+def concat_labels(labels_list: List[dict]) -> DataFrame[LabelDF]:
     """Create a dataset from a list of labels dictionaries"""
     # pd.DataFrame(columns=["channel", "label", "start_time", "end_time"])
     df = pd.DataFrame(labels_list)
@@ -50,7 +50,7 @@ def check_label(label: str) -> str:
 
 
 @check_types
-def read_tse(tse_path: Path) -> DataFrame[LabelSchema]:
+def read_tse(tse_path: Path) -> DataFrame[LabelDF]:
     """Extract global labels and timestamps from .tse file"""
     labels = []
 
@@ -59,7 +59,7 @@ def read_tse(tse_path: Path) -> DataFrame[LabelSchema]:
             split = line.split(" ")
             labels.append(
                 dict(
-                    channel="general",
+                    channel=GLOBAL_CHANNEL,
                     label=check_label(split[2]),
                     start_time=float(split[0]),
                     end_time=float(split[1]),
@@ -70,7 +70,7 @@ def read_tse(tse_path: Path) -> DataFrame[LabelSchema]:
 
 
 @check_types
-def read_lbl(lbl_path: Path) -> DataFrame[LabelSchema]:
+def read_lbl(lbl_path: Path) -> DataFrame[LabelDF]:
     """Parse `.lbl[_bi]` file.
 
     Args:
@@ -123,7 +123,7 @@ def read_lbl(lbl_path: Path) -> DataFrame[LabelSchema]:
 
 
 @check_types
-def read_labels(edf_path: Path, binary: bool) -> DataFrame[LabelSchema]:
+def read_labels(edf_path: Path, binary: bool) -> DataFrame[LabelDF]:
     """Retrieve seizure labels parsing the ``.tse[_bi]`` and the ``.lbl[_bi]`` files corresponding to the ``.edf``
     file at *file_path*.
 
@@ -158,7 +158,7 @@ def read_labels(edf_path: Path, binary: bool) -> DataFrame[LabelSchema]:
 
 
 @check_types
-def get_edf_annotations(edf_path: Path, binary: bool) -> DataFrame[AnnotationSchema]:
+def get_edf_annotations(edf_path: Path, binary: bool) -> DataFrame[AnnotationDF]:
     """Use edf path to retrieve EEG scan info and annotations.
 
     Args:

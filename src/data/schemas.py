@@ -2,8 +2,10 @@
 import pandera as pa
 from pandera.typing import DateTime, Index, Series
 
+from src.data.tusz.constants import REGEX_SIGNAL_CHANNELS
 
-class LabelSchema(pa.SchemaModel):
+
+class LabelDF(pa.SchemaModel):
     """
     ======= =======  ===== ========== ========
     Columns
@@ -20,7 +22,7 @@ class LabelSchema(pa.SchemaModel):
     end_time: Series[float]
 
 
-class AnnotationSchema(pa.SchemaModel):
+class AnnotationDF(pa.SchemaModel):
     """Dataframe for EEG annotations:
 
     ======= ======= ======= =======  ===== ========== ======== ====
@@ -50,3 +52,9 @@ class AnnotationSchema(pa.SchemaModel):
         multiindex_name = "segment_id"
         multiindex_strict = True
         multiindex_coerce = True
+
+
+class SignalsDF(pa.SchemaModel):
+    """Class for eeg signals: columns are channels names and rows are samples"""
+
+    channel: Series[float] = pa.Field(alias=REGEX_SIGNAL_CHANNELS, regex=True)

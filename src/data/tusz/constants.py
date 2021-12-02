@@ -1,6 +1,18 @@
 """Constants for TUSZ data retrieval"""
 
 ################################################################################
+# OUTPUT FILENAMES
+
+FILE_SIGNAL_REF = "signal_ref.parquet"
+FILE_SIGNAL_DIFF = "signal_diff.parquet"
+FILE_SEGMENTS_DF = "segments.parquet"
+
+################################################################################
+# CHANNEL NAMES
+
+GLOBAL_CHANNEL = "global"
+
+################################################################################
 # FILE EXTENSIONS
 SUFFIXES = [".edf", ".tse", ".lbl"]
 SUFFIXES_BINARY = [".edf", ".tse_bi", ".lbl_bi"]
@@ -22,7 +34,8 @@ REGEX_SYMBOLS = r"symbols\[(?P<level>\d+)\].*(?P<sym_dict>\{.*\})"
 REGEX_MONTAGE = r"(?P<num>\d+), (?P<montage>\w+\d*-\w+\d*):"
 
 # SIGNALS REGEXES
-REGEX_SIGNAL_CHANNELS = r"EEG (?P<ch>[\w\d]+)-REF"
+TEMPLATE_SIGNAL_CHANNELS = "EEG {}-REF"
+REGEX_SIGNAL_CHANNELS = TEMPLATE_SIGNAL_CHANNELS.format(r"(?P<ch>[\w\d]+)")
 
 
 ################################################################################
