@@ -9,7 +9,7 @@ from pandera import check_types
 from pandera.typing import DataFrame
 from scipy.signal import resample
 
-from ..schemas import SignalsDF
+from src.data.schemas import SignalsDF
 
 ################################################################################
 # DATA LOADING

@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 from pandera.typing import DataFrame
 
-from .utils import lower_na
+from src.data.tusz.utils import lower_na
 
 
 def read_seiz_vocabulary(file_path: Path) -> DataFrame:

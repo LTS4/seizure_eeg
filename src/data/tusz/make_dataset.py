@@ -12,20 +12,20 @@ from pandera import check_types
 from pandera.typing import DataFrame, Index
 from tqdm import tqdm
 
-from ...config import TUSZ_VERSION, Signals
-from ...run import run
-from ..schemas import AnnotationDF
-from .annotations import get_edf_annotations
-from .constants import (
+from src.config import TUSZ_VERSION, Signals
+from src.data.schemas import AnnotationDF
+from src.data.tusz.annotations import get_edf_annotations
+from src.data.tusz.constants import (
     FILE_SEGMENTS_DF,
     FILE_SIGNAL_DIFF,
     FILE_SIGNAL_REF,
     GLOBAL_CHANNEL,
     TEMPLATE_SIGNAL_CHANNELS,
 )
-from .io import read_seiz_vocabulary
-from .signals import extract_segment, get_resampled_signals
-from .utils import list_all_edf_files
+from src.data.tusz.io import read_seiz_vocabulary
+from src.data.tusz.signals import extract_segment, get_resampled_signals
+from src.data.tusz.utils import list_all_edf_files
+from src.run import run
 
 logger = logging.getLogger(__name__)
 
