@@ -1,3 +1,4 @@
+"""I/O functions for annotations files (lbl and tse)"""
 import re
 from ast import literal_eval
 from pathlib import Path
@@ -45,8 +46,9 @@ def read_lbl(lbl_path: Path) -> DataFrame[LabelDF]:
         lbl_path (Path): Path to `.lbl[_bi]` file.
 
     Returns:
-        Dict[str, List[Labels]]: Dictionary with montages (i.e. strings with "<electrode1>-<electrode2>") as keys.
-            Itemes are lists of `Labels`, i.e. dataclasses containing start/ends times and seizure labels.
+        Dict[str, List[Labels]]: Dictionary with montages (i.e. strings with
+            ``"<electrode1>-<electrode2>"`` ) as keys. Items are lists of `Labels`, i.e. dataclasses
+            containing start/ends times and seizure labels.
     """
     montages = []
     symbols = []
@@ -92,8 +94,8 @@ def read_lbl(lbl_path: Path) -> DataFrame[LabelDF]:
 
 @check_types
 def read_labels(edf_path: Path, binary: bool) -> DataFrame[AnnotationDF]:
-    """Retrieve seizure labels parsing the ``.tse[_bi]`` and the ``.lbl[_bi]`` files corresponding to the ``.edf``
-    file at *file_path*.
+    """Retrieve seizure labels parsing the ``.tse[_bi]`` and the ``.lbl[_bi]`` files corresponding
+    to the ``.edf`` file at *file_path*.
 
     Args:
         edf_path (Path): Path to the ``.edf`` file

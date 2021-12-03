@@ -1,3 +1,4 @@
+"""I/O functions for EDF signals"""
 from pathlib import Path
 from typing import Tuple
 
@@ -38,7 +39,9 @@ def read_eeg_signals(edf_path: Path) -> Tuple[DataFrame[SignalsDF], int]:
     n_channels = edf_reader.signals_in_file
 
     if n_channels != len(signal_channels):
-        raise AssertionError(f"Number of channels different from names: {n_channels} != {len(signal_channels)}")
+        raise AssertionError(
+            f"Number of channels different from names: {n_channels} != {len(signal_channels)}"
+        )
 
     # nb_samples is an array of nb_samples per channel
     nb_samples = edf_reader.getNSamples()
@@ -48,16 +51,24 @@ def read_eeg_signals(edf_path: Path) -> Tuple[DataFrame[SignalsDF], int]:
     signals = pd.DataFrame()
     ref_rate = None
 
-    for i, (ch_name, ch_samples, ch_rate) in enumerate(zip(signal_channels, nb_samples, sampling_rates)):
+    for i, (ch_name, ch_samples, ch_rate) in enumerate(
+        zip(signal_channels, nb_samples, sampling_rates)
+    ):
         if ch_name.startswith("EEG"):
             if ref_rate is None:
                 ref_samples = ch_samples
                 ref_rate = int(ch_rate)
 
-            assert ch_samples == ref_samples, f"Channel '{ch_name}' has lenght {ch_samples}, expecting {ref_samples}"
+            assert (
+                ch_samples == ref_samples
+            ), f"Channel '{ch_name}' has lenght {ch_samples}, expecting {ref_samples}"
 
-            assert np.allclose(np.modf(ch_rate)[0], 0), f"Non-integer sampling rate in {ch_name}: {ch_rate}"
-            assert ch_rate == ref_rate, f"Channel '{ch_name}' has sampling rate {ch_rate}, expecting {ref_rate}"
+            assert np.allclose(
+                np.modf(ch_rate)[0], 0
+            ), f"Non-integer sampling rate in {ch_name}: {ch_rate}"
+            assert (
+                ch_rate == ref_rate
+            ), f"Channel '{ch_name}' has sampling rate {ch_rate}, expecting {ref_rate}"
 
             signals[fix_channel_name(ch_name)] = edf_reader.readSignal(i)
 

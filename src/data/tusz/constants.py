@@ -3,10 +3,8 @@
 ################################################################################
 # OUTPUT FILENAMES
 
-FILE_METADATA = "metadata.json"
 FILE_SEGMENTS_DF = "segments.parquet"
-FILE_SIGNAL_REF = "signal_ref.parquet"
-FILE_SIGNAL_DIFF = "signal_diff.parquet"
+FILE_SIGNALS = "signals.parquet"
 
 ################################################################################
 # CHANNEL NAMES

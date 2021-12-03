@@ -41,11 +41,14 @@ def list_all_edf_files(root_path: Path) -> List[Path]:
 
 def write_parquet(df: DataFrame, path: Path, force_rewrite: Optional[bool] = False) -> bool:
     """Write dataframe to parquet and return ``True`` if succeded.
-    If not *force_rewrite* log if file exists anr return ``False``"""
+    If not *force_rewrite* log if file exists and return ``False``"""
+
     if not force_rewrite and path.exists():
         logger.info("Skipping existing file: %s", path)
         return False
-    else:
-        # TODO: check wheter saving pre-splitted files speeds-up computations
-        df.to_parquet(path)
-        return True
+
+    # TODO: check wheter saving pre-splitted files speeds-up computations
+    os.makedirs(path.parent, exist_ok=True)
+
+    df.to_parquet(path)
+    return True

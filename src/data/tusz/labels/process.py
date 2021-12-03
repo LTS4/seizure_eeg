@@ -23,11 +23,16 @@ def get_channels(annotations: DataFrame[AnnotationDF]) -> Index[str]:
 
 
 def time_to_samples(annotations: DataFrame[AnnotationDF], nb_samples) -> DataFrame[AnnotationDF]:
-    """Convert the start/end time columns of *annotations* to sample indices based on total ``nb_samples``"""
+    """Convert the start/end time columns of *annotations* to sample indices based on total
+    ``nb_samples``"""
     duration = annotations[AnnotationDF.end_time].max()
 
-    annotations["start_sample"] = np.floor(annotations[AnnotationDF.start_time] / duration * nb_samples).astype(int)
-    annotations["end_sample"] = np.ceil(annotations[AnnotationDF.end_time] / duration * nb_samples).astype(int)
+    annotations["start_sample"] = np.floor(
+        annotations[AnnotationDF.start_time] / duration * nb_samples
+    ).astype(int)
+    annotations["end_sample"] = np.ceil(
+        annotations[AnnotationDF.end_time] / duration * nb_samples
+    ).astype(int)
 
     return annotations
 
