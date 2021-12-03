@@ -1,19 +1,6 @@
-"""Utilities to read edf annotations.
-
-The main purpose is to produce a dataset whose entries have this structure:
-
-======= ======= ======= =======  ===== ========== ======== ========= =============
-Multiindex                       Columns
--------------------------------  -------------------------------------------------
-patient session channel segment  label start_time end_time file_path sampling_rate
-======= ======= ======= =======  ===== ========== ======== ========= =============
-"""
-
 import re
 from ast import literal_eval
-from datetime import datetime
 from pathlib import Path
-from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -26,33 +13,8 @@ from src.data.tusz.constants import (
     REGEX_LABEL,
     REGEX_MONTAGE,
     REGEX_SYMBOLS,
-    TYPOS,
 )
-
-
-def extract_session_date(string: str) -> Tuple[str, datetime]:
-    """From a string of format ``s\\d{3}_YYYY_MM_DD`` extract date and session id."""
-    match = re.search(
-        r"s(\d{3})_(\d{4}_\d{2}_\d{2})",
-        string,
-    )
-    session_id = match.group(1)
-
-    date = datetime.strptime(match.group(2), "%Y_%m_%d")
-
-    return session_id, date
-
-
-@check_types
-def concat_labels(labels_list: List[dict]) -> DataFrame[LabelDF]:
-    """Create a dataset from a list of labels dictionaries"""
-    # pd.DataFrame(columns=["channel", "label", "start_time", "end_time"])
-    df = pd.DataFrame(labels_list)
-    return df.assign(segment=df.groupby("channel").cumcount())
-
-
-def check_label(label: str) -> str:
-    return TYPOS.get(label, label)
+from src.data.tusz.utils import check_label, concat_labels, extract_session_date
 
 
 @check_types
@@ -119,7 +81,7 @@ def read_lbl(lbl_path: Path) -> DataFrame[LabelDF]:
             labels.append(
                 dict(
                     channel=montages[montage_n],
-                    label=symbols[level][sym_int],
+                    label=check_label(symbols[level][sym_int]),
                     start_time=start,
                     end_time=end,
                 )
@@ -129,7 +91,7 @@ def read_lbl(lbl_path: Path) -> DataFrame[LabelDF]:
 
 
 @check_types
-def read_labels(edf_path: Path, binary: bool) -> DataFrame[LabelDF]:
+def read_labels(edf_path: Path, binary: bool) -> DataFrame[AnnotationDF]:
     """Retrieve seizure labels parsing the ``.tse[_bi]`` and the ``.lbl[_bi]`` files corresponding to the ``.edf``
     file at *file_path*.
 
@@ -155,31 +117,14 @@ def read_labels(edf_path: Path, binary: bool) -> DataFrame[LabelDF]:
     if not lbl_path.exists():
         raise IOError(f"File not found: {lbl_path}")
 
-    return pd.concat(
+    df = pd.concat(
         [
             read_tse(tse_path),
             read_lbl(lbl_path),
         ]
     )
 
-
-@check_types
-def get_edf_annotations(edf_path: Path, binary: bool) -> DataFrame[AnnotationDF]:
-    """Use edf path to retrieve EEG scan info and annotations.
-
-    Args:
-        edf_path (Path): Path to ``.edf`` file
-        binary (bool): Whether to retieve *bkgd*-vs-*seiz* or complete labels
-
-    Raises:
-        IOError: If one of the labels files is missing
-
-    Returns:
-        DataFrame[AnnotationSchema]: Annotations per segment and per channel
-    """
-    df = read_labels(edf_path, binary)
-
     df["patient"] = edf_path.parents[1].stem
-    df["session"], df["date"] = extract_session_date(edf_path.parents[0].stem)
+    df["session"], df["date"] = edf_path.stem, extract_session_date(edf_path.parents[0].stem)
 
     return df.set_index(["patient", "session", "channel", "segment"])
