@@ -13,21 +13,21 @@ from src.data.tusz.constants import TEMPLATE_SIGNAL_CHANNELS
 # RASAMPLING
 
 
-def get_resampled_signals(
+def resample_signals(
     signals: DataFrame, sampling_rate_in: int, sampling_rate_out: int
 ) -> DataFrame:
-    """Read ``.edf`` file and retrieve EEG scans and relative information.
+    """Resample signals dataframe
 
     Args:
-        edf_path (Path): Path to ``.edf`` file.
+        signals (DataFrame): DataFrame of time series
+        sampling_rate_in (int): sampling rate of input DF
+        sampling_rate_out (int): desired sampling rate
 
     Raises:
-        AssetionError: on unexpected input
+        ValueError: If *sampling_rate_out* is greater than *sampling_rate_in*
 
     Returns:
-        Tuple[np.ndarray, List[str]]: Return three terms:
-            - Array of EEG scans of shape ``(nb_channels, nb_samples)``
-            - List of channels names
+        DataFrame: Resampled dataframe with same columns as input one
     """
 
     # Resample to target rate in Hz = samples/sec. Do nothing if already at required freq
@@ -85,7 +85,11 @@ def process_signals(
     sampling_rate_out: int,
     diff_labels: Optional[Index[str]] = None,
 ) -> DataFrame:
-    """Process signals read from edf file
+    """Process signals read from edf file.
+
+    Processing steps:
+        1. (opt) Subtract pairwise columns
+        2. Resample signals
 
     Args:
         signals (DataFrame): Dataframe of signals of shape ``nb_samples x nb_channels``
@@ -99,9 +103,11 @@ def process_signals(
         DataFrame: Processed signals
     """
 
+    # 1. (opt) Subtract pairwise columns
     if diff_labels is not None:
         signals = get_diff_signals(signals, diff_labels)
 
-    signals = get_resampled_signals(signals, sampling_rate_in, sampling_rate_out)
+    # 2. Resample signals
+    signals = resample_signals(signals, sampling_rate_in, sampling_rate_out)
 
     return signals
