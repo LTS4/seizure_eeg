@@ -130,3 +130,65 @@ def read_labels(edf_path: Path, binary: bool) -> DataFrame[AnnotationDF]:
     df["session"], df["date"] = edf_path.stem, extract_session_date(edf_path.parents[0].stem)
 
     return df.set_index(["patient", "session", "channel", "segment"])
+
+
+####################################################################################################
+# Reference files
+
+
+def read_ref(doc_path: Path) -> DataFrame:
+    """Read the ``ref_*.txt`` files in the doc folder"""
+    df_list = []
+    for file in doc_path.glob("ref_*.txt"):
+        df = pd.read_csv(
+            file,
+            sep=" ",
+            names=["session", "start_time", "end_time", "label", "prob"],
+        )
+
+        df["split"] = file.stem.replace("ref_", "")
+        df_list.append(df)
+
+    assert len(df_list) > 0, "No ref file found"
+
+    return pd.concat(df_list, ignore_index=True)
+
+
+def path_to_id_single(x):
+    path = Path(x)
+    return pd.Series((path.parents[1].stem, path.stem))
+
+
+def path_to_id(df):
+    df[["patient", "session"]] = df["session"].apply(path_to_id_single)
+    return df
+
+
+def rename_columns(df, columns):
+    df.columns = columns
+    return df
+
+
+def parse_calibration(df_slice):
+    df = (
+        df_slice.iloc[3:]
+        .pipe(rename_columns, columns=["session", "start_time", "end_time"])
+        .dropna()
+        .reset_index(drop=True)
+        .pipe(path_to_id)
+    )
+    df["split"] = df_slice.iloc[0, 0]
+    return df
+
+
+def read_calibration(doc_path: Path) -> DataFrame:
+    calibration = pd.read_excel(
+        doc_path / "seizures_v36r.xlsx", sheet_name="Calibration", header=None
+    )
+
+    calibration = pd.concat(
+        [parse_calibration(calibration.iloc[:, 4 * i : 4 * i + 3]) for i in range(3)],
+        ignore_index=True,
+    )
+
+    return calibration
