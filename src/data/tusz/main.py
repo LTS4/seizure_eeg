@@ -5,7 +5,7 @@ from pathlib import Path
 
 import click
 
-from src.config import TUSZ_VERSION, Signals
+from src.config import TUSZ, Signals
 from src.data.tusz.dataset import process_dataset
 from src.run import run
 
@@ -19,24 +19,23 @@ logger = logging.getLogger(__name__)
 @click.command()
 @click.argument("raw-data-folder", type=click.Path(exists=True, path_type=Path))
 @click.argument("processed-data-folder", type=click.Path(path_type=Path))
-@click.option("--force-rewrite", is_flag=True)
-def main(raw_data_folder: Path, processed_data_folder: Path, force_rewrite: bool):
+def main(raw_data_folder: Path, processed_data_folder: Path):
     """Runs data processing scripts to turn raw data from (../raw) into
     cleaned data ready to be analyzed (saved in ../processed).
     """
     logger.info("making final data set from raw data")
 
-    raw_edf_folder = raw_data_folder / TUSZ_VERSION / "edf/dev"
-    output_folder = processed_data_folder / TUSZ_VERSION / "dev"
+    raw_edf_folder = raw_data_folder / TUSZ.version / "edf"
+    output_folder = processed_data_folder / TUSZ.version
 
-    process_dataset(
-        raw_edf_folder,
-        output_folder,
-        sampling_rate=Signals.sampling_rate,
-        diff_channels=Signals.diff_channels,
-        binary=False,
-        force_rewrite=force_rewrite,
-    )
+    for split in ("dev", "train"):
+        process_dataset(
+            raw_edf_folder / split,
+            output_folder / split,
+            sampling_rate=Signals.sampling_rate,
+            diff_channels=Signals.diff_channels,
+            binary=False,
+        )
 
 
 if __name__ == "__main__":

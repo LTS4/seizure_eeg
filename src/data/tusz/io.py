@@ -39,7 +39,7 @@ def list_all_edf_files(root_path: Path) -> List[Path]:
     return filelist
 
 
-def write_parquet(df: DataFrame, path: Path, force_rewrite: Optional[bool] = False) -> bool:
+def write_parquet(df: DataFrame, path: Path, force_rewrite: Optional[bool] = True) -> bool:
     """Write dataframe to parquet and return ``True`` if succeded.
     If not *force_rewrite* log if file exists and return ``False``"""
 
