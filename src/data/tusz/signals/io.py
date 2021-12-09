@@ -61,7 +61,7 @@ def read_eeg_signals(edf_path: Path) -> Tuple[DataFrame[SignalsDF], int]:
 
             assert (
                 ch_samples == ref_samples
-            ), f"Channel '{ch_name}' has lenght {ch_samples}, expecting {ref_samples}"
+            ), f"Channel '{ch_name}' has length {ch_samples}, expecting {ref_samples}"
 
             assert np.allclose(
                 np.modf(ch_rate)[0], 0

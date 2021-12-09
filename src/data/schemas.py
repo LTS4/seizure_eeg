@@ -32,9 +32,9 @@ class AnnotationDF(pa.SchemaModel):
     ======= ======= ======= =======  ===== ========== ======== ====
     """
 
+    channel: Index[str]
     patient: Index[str]
     session: Index[str]
-    channel: Index[str]
     segment: Index[int]
 
     label: Series[str]

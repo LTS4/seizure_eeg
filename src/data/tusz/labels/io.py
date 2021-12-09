@@ -130,7 +130,7 @@ def read_labels(edf_path: Path, binary: bool) -> DataFrame[AnnotationDF]:
     df["session"], df["date"] = edf_path.stem, extract_session_date(edf_path.parents[0].stem)
     df["edf_path"] = str(edf_path.absolute())
 
-    return df.set_index(["patient", "session", "channel", "segment"])
+    return df.set_index(["channel", "patient", "session", "segment"])
 
 
 ####################################################################################################
