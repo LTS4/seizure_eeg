@@ -8,8 +8,7 @@ from tqdm import tqdm
 
 from src.data.dataset import EEGDataset
 from src.data.schemas import AnnotationDF
-from src.data.tusz.constants import FILE_SEGMENTS_DF
-from src.data.tusz.io import list_all_edf_files, write_parquet
+from src.data.tusz.io import list_all_edf_files
 from src.data.tusz.labels.io import read_labels
 
 logger = logging.getLogger(__name__)
@@ -60,9 +59,9 @@ def make_clips(
         clip_start = clip_idx * clip_length
         clip_end = (clip_idx + 1) * clip_length
 
-        filter = (start_times <= clip_start) & (clip_end <= end_times)
+        bool_mask = (start_times <= clip_start) & (clip_end <= end_times)
 
-        copy_vals = annotations[filter].copy()
+        copy_vals = annotations[bool_mask].copy()
         copy_vals[["segment", "start_time", "end_time"]] = clip_idx, clip_start, clip_end
         out_list.append(copy_vals)
 
@@ -76,13 +75,13 @@ def make_clips(
 def make_dataset(
     root_folder: Path,
     *,
+    clip_length: int,
     binary: bool,
 ) -> EEGDataset:
-    clips = make_clips(annotations=process_annotations(root_folder, binary=binary))
+    """Create eeg dataset by parsing all files in root_folder"""
+    clips = make_clips(
+        annotations=process_annotations(root_folder, binary=binary),
+        clip_length=clip_length,
+    )
 
-    # # Create segments database and save
-    # write_parquet(
-    #     output_folder / FILE_SEGMENTS_DF,
-    # )
-
-    pass
+    return EEGDataset(clips)
