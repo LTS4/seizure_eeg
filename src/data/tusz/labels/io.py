@@ -126,11 +126,14 @@ def read_labels(edf_path: Path, binary: bool) -> DataFrame[AnnotationDF]:
         ]
     )
 
-    df["patient"] = edf_path.parents[1].stem
-    df["session"], df["date"] = edf_path.stem, extract_session_date(edf_path.parents[0].stem)
-    df["edf_path"] = str(edf_path.absolute())
+    df[AnnotationDF.patient] = edf_path.parents[1].stem
+    df[AnnotationDF.session] = edf_path.stem
+    df[AnnotationDF.date] = extract_session_date(edf_path.parents[0].stem)
+    df[AnnotationDF.edf_path] = str(edf_path.absolute())
 
-    return df.set_index(["channel", "patient", "session", "segment"])
+    return df.set_index(
+        [AnnotationDF.channel, AnnotationDF.patient, AnnotationDF.session, AnnotationDF.segment]
+    )
 
 
 ####################################################################################################
@@ -144,7 +147,13 @@ def read_ref(doc_path: Path) -> DataFrame:
         df = pd.read_csv(
             file,
             sep=" ",
-            names=["session", "start_time", "end_time", "label", "prob"],
+            names=[
+                AnnotationDF.session,
+                AnnotationDF.start_time,
+                AnnotationDF.end_time,
+                AnnotationDF.label,
+                "prob",
+            ],
         )
 
         df["split"] = file.stem.replace("ref_", "")
@@ -161,7 +170,9 @@ def path_to_id_single(x):
 
 
 def path_to_id(df):
-    df[["patient", "session"]] = df["session"].apply(path_to_id_single)
+    df[[AnnotationDF.patient, AnnotationDF.session]] = df[AnnotationDF.session].apply(
+        path_to_id_single
+    )
     return df
 
 
@@ -173,7 +184,10 @@ def rename_columns(df, columns):
 def parse_calibration(df_slice):
     df = (
         df_slice.iloc[3:]
-        .pipe(rename_columns, columns=["session", "start_time", "end_time"])
+        .pipe(
+            rename_columns,
+            columns=[AnnotationDF.session, AnnotationDF.start_time, AnnotationDF.end_time],
+        )
         .dropna()
         .reset_index(drop=True)
         .pipe(path_to_id)

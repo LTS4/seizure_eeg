@@ -53,7 +53,10 @@ def make_clips(
 ) -> DataFrame[AnnotationDF]:
     "Split annotations dataframe in dataframe of non-overlapping clips"
     annotations = annotations.reset_index()
-    start_times, end_times = annotations["start_time"], annotations["end_time"]
+    start_times, end_times = (
+        annotations[AnnotationDF.start_time],
+        annotations[AnnotationDF.end_time],
+    )
 
     out_list = []
     for clip_idx in range(int(end_times.max() / clip_length)):
@@ -63,12 +66,18 @@ def make_clips(
         bool_mask = (start_times <= clip_start) & (clip_end <= end_times)
 
         copy_vals = annotations[bool_mask].copy()
-        copy_vals[["segment", "start_time", "end_time"]] = clip_idx, clip_start, clip_end
+        copy_vals[[AnnotationDF.segment, AnnotationDF.start_time, AnnotationDF.end_time]] = (
+            clip_idx,
+            clip_start,
+            clip_end,
+        )
         out_list.append(copy_vals)
 
     return (
         pd.concat(out_list)  #
-        .set_index(["channel", "patient", "session", "segment"])  #
+        .set_index(
+            [AnnotationDF.channel, AnnotationDF.patient, AnnotationDF.session, AnnotationDF.segment]
+        )  #
         .sort_index()
     )
 
