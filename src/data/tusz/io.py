@@ -47,8 +47,7 @@ def write_parquet(df: DataFrame, path: Path, force_rewrite: Optional[bool] = Tru
         logger.info("Skipping existing file: %s", path)
         return False
 
-    # TODO: check wheter saving pre-splitted files speeds-up computations
-    os.makedirs(path.parent, exist_ok=True)
-
+    path.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(path)
+
     return True

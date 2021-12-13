@@ -35,7 +35,7 @@ def main(cfg: DictConfig):
             root_folder=raw_edf_folder / split,
             clip_length=cfg.data.signals.clip_length,
             binary=cfg.data.labels.binary,
-            # output_folder / split,
+            clips_save_path=output_folder / split / "clips.parquet",
             # sampling_rate=cfg.data.signals.sampling_rate,
             # diff_channels=cfg.data.signals.diff_channels,
             # binary=False,
