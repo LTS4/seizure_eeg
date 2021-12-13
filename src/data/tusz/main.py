@@ -25,12 +25,12 @@ def main(cfg: DictConfig):
     """
     print(OmegaConf.to_yaml(cfg))
 
-    logger.info("making final data set from raw data")
-
     raw_edf_folder = Path(cfg.data.tusz.raw_edf)
     output_folder = Path(cfg.data.tusz.processed)
 
     for split in ("dev", "train"):
+        logging.info("Creating %s dataset", split.upper())
+
         eeg_data = make_dataset(
             root_folder=raw_edf_folder / split,
             clip_length=cfg.data.signals.clip_length,
@@ -40,7 +40,10 @@ def main(cfg: DictConfig):
             # diff_channels=cfg.data.signals.diff_channels,
             # binary=False,
         )
-        print(eeg_data)
+
+        logging.info("Created %s dataset - # samples: %d", split.upper(), len(eeg_data))
+
+        print(eeg_data[0])
 
 
 if __name__ == "__main__":
