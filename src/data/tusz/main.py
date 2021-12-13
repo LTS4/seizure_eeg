@@ -3,10 +3,9 @@
 import logging
 from pathlib import Path
 
-import click
+from omegaconf import DictConfig, OmegaConf
 
-from src.config import TUSZ, Signals
-from src.data.tusz.dataset import process_dataset
+from src.data.tusz.dataset import make_dataset
 from src.run import run
 
 logger = logging.getLogger(__name__)
@@ -15,29 +14,35 @@ logger = logging.getLogger(__name__)
 ################################################################################
 # MAIN
 
+# @click.argument("raw-data-folder", type=click.Path(exists=True, path_type=Path))
+# @click.argument("processed-data-folder", type=click.Path(path_type=Path))
 
-@click.command()
-@click.argument("raw-data-folder", type=click.Path(exists=True, path_type=Path))
-@click.argument("processed-data-folder", type=click.Path(path_type=Path))
-def main(raw_data_folder: Path, processed_data_folder: Path):
+
+@run(config_path="config.yaml")
+def main(cfg: DictConfig):
     """Runs data processing scripts to turn raw data from (../raw) into
     cleaned data ready to be analyzed (saved in ../processed).
     """
+    print(OmegaConf.to_yaml(cfg))
+
     logger.info("making final data set from raw data")
 
-    raw_edf_folder = raw_data_folder / TUSZ.version / "edf"
-    output_folder = processed_data_folder / TUSZ.version
+    raw_edf_folder = Path(cfg.data.tusz.raw_edf)
+    output_folder = Path(cfg.data.tusz.processed)
 
     for split in ("dev", "train"):
-        process_dataset(
-            raw_edf_folder / split,
-            output_folder / split,
-            sampling_rate=Signals.sampling_rate,
-            diff_channels=Signals.diff_channels,
-            binary=False,
+        eeg_data = make_dataset(
+            root_folder=raw_edf_folder / split,
+            clip_length=cfg.data.signals.clip_length,
+            binary=cfg.data.labels.binary,
+            # output_folder / split,
+            # sampling_rate=cfg.data.signals.sampling_rate,
+            # diff_channels=cfg.data.signals.diff_channels,
+            # binary=False,
         )
+        print(eeg_data)
 
 
 if __name__ == "__main__":
     # pylint: disable=no-value-for-parameter
-    run(main, "data/tusz.log")
+    main()
