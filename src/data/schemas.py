@@ -25,11 +25,11 @@ class LabelDF(pa.SchemaModel):
 class AnnotationDF(pa.SchemaModel):
     """Dataframe for EEG annotations:
 
-    ======= ======= ======= =======  ===== ========== ======== ====
+    ======= ======= ======= =======  ===== ========== ======== =============
     Multiindex                       Columns
-    -------------------------------  ------------------------------
-    patient session channel segment  label start_time end_time date
-    ======= ======= ======= =======  ===== ========== ======== ====
+    -------------------------------  ---------------------------------------
+    patient session channel segment  label start_time end_time date edf_path
+    ======= ======= ======= =======  ===== ========== ======== ==== ========
     """
 
     channel: Index[str]
@@ -41,7 +41,7 @@ class AnnotationDF(pa.SchemaModel):
     start_time: Series[float]
     end_time: Series[float]
     date: Series[DateTime]
-    # file_path: Series[object]
+    edf_path: Series[str]
     # sampling_rate: Series[int]
 
     class Config:
