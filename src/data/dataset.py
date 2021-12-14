@@ -15,7 +15,7 @@ class EEGDataset(Dataset):
         self.clips_df = clips_df
 
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        label, signal_path = self.clips_df.iloc[index][AnnotationDF.label, AnnotationDF.edf_path]
+        label, signal_path = self.clips_df.iloc[index][[AnnotationDF.label, AnnotationDF.edf_path]]
         print(label)
         print(signal_path)
         input()
