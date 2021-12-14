@@ -32,15 +32,19 @@ def main(cfg: DictConfig):
             label_map=OmegaConf.to_container(cfg.data.labels.map),
             binary=cfg.data.labels.binary,
             load_existing=cfg.data.load_existing,
+            # Dataset options
             clips_save_path=output_folder / split / "clips.parquet",
-            # sampling_rate=cfg.data.signals.sampling_rate,
-            # diff_channels=cfg.data.signals.diff_channels,
-            # binary=False,
+            sampling_rate=cfg.data.signals.sampling_rate,
+            diff_channels=cfg.data.signals.diff_channels,
         )
 
         logging.info("Created %s dataset - # samples: %d", split.upper(), len(eeg_data))
 
-        # print(eeg_data[0])
+        for i in range(len(eeg_data)):
+            print(i)
+            sample = eeg_data[i]
+            print("Label:", sample[0])
+            print("Signals:", sample[1].shape)
 
 
 if __name__ == "__main__":

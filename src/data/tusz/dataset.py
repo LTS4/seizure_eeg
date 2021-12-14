@@ -93,6 +93,8 @@ def make_dataset(
     clip_length: int,
     label_map: Dict[str, str],
     binary: bool,
+    sampling_rate: int,
+    diff_channels: bool,
     load_existing: Optional[bool] = False,
     clips_save_path: Optional[Path] = None,
 ) -> EEGDataset:
@@ -110,4 +112,4 @@ def make_dataset(
         if clips_save_path:
             write_parquet(clips_df, clips_save_path)
 
-    return EEGDataset(clips_df)
+    return EEGDataset(clips_df, sampling_rate=sampling_rate, diff_channels=diff_channels)
