@@ -173,6 +173,7 @@ def rename_columns(df, columns):
 
 
 def parse_calibration(df_slice):
+    """Parse calibration"""
     df = (
         df_slice.iloc[3:]
         .pipe(
@@ -188,6 +189,7 @@ def parse_calibration(df_slice):
 
 
 def read_calibration(doc_path: Path) -> DataFrame:
+    """Read calibration sheet from documentation excel file"""
     calibration = pd.read_excel(
         doc_path / "seizures_v36r.xlsx", sheet_name="Calibration", header=None
     )
