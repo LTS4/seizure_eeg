@@ -7,7 +7,7 @@ from torch.utils.data import Dataset
 
 from src.data.schemas import AnnotationDF
 from src.data.tusz.constants import GLOBAL_CHANNEL
-from src.data.tusz.labels.process import get_channels
+from src.data.tusz.annotations.process import get_channels
 from src.data.tusz.signals.io import read_eeg_signals
 from src.data.tusz.signals.process import process_signals
 

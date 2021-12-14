@@ -5,7 +5,6 @@ from pathlib import Path
 
 import torch
 from omegaconf import DictConfig, OmegaConf
-from torch.utils import data
 
 from src.data.tusz.dataset import make_dataset
 from src.run import run
