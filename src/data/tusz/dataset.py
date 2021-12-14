@@ -1,7 +1,7 @@
 """Pipeline to generate dataset"""
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Dict, Optional
 
 import pandas as pd
 from pandera.typing import DataFrame
@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 def process_annotations(
     root_folder: Path,
     *,
+    label_map: Dict[str, str],
     binary: bool,
 ) -> DataFrame[AnnotationDF]:
     """Precess every file in the root_folder tree"""
@@ -30,7 +31,7 @@ def process_annotations(
     for edf_path in tqdm(file_list, desc=f"{root_folder}"):
         try:
 
-            annotations = read_labels(edf_path, binary)
+            annotations = read_labels(edf_path, label_map=label_map, binary=binary)
             annotations_list.append(annotations)
 
         except (IOError, AssertionError) as err:
@@ -90,17 +91,19 @@ def make_dataset(
     root_folder: Path,
     *,
     clip_length: int,
+    label_map: Dict[str, str],
     binary: bool,
+    load_existing: Optional[bool] = False,
     clips_save_path: Optional[Path] = None,
 ) -> EEGDataset:
     """Create eeg dataset by parsing all files in root_folder"""
-    if clips_save_path and clips_save_path.exists():
+    if load_existing and clips_save_path and clips_save_path.exists():
         logging.info("Reading clips dataframe: %s", clips_save_path)
         clips_df = pd.read_parquet(clips_save_path)
     else:
         logging.info("Creating clips dataframe from %s", root_folder)
         clips_df = make_clips(
-            annotations=process_annotations(root_folder, binary=binary),
+            annotations=process_annotations(root_folder, label_map=label_map, binary=binary),
             clip_length=clip_length,
         )
 

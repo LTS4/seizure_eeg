@@ -1,7 +1,9 @@
 """I/O functions for annotations files (lbl and tse)"""
+import logging
 import re
 from ast import literal_eval
 from pathlib import Path
+from typing import Dict
 
 import numpy as np
 import pandas as pd
@@ -92,8 +94,17 @@ def read_lbl(lbl_path: Path) -> DataFrame[LabelDF]:
     return concat_labels(labels)
 
 
+def map_labels(df: DataFrame, label_map: Dict[str, str]) -> DataFrame:
+    n_in = len(df)
+    df[AnnotationDF.label] = df[AnnotationDF.label].map(lambda x: label_map[x])
+    df = df.dropna().astype({AnnotationDF.label: int})
+    logging.debug("Dropped %d entries with nan values", n_in)
+
+    return df
+
+
 @check_types
-def read_labels(edf_path: Path, binary: bool) -> DataFrame[AnnotationDF]:
+def read_labels(edf_path: Path, label_map: Dict[str, str], binary: bool) -> DataFrame[AnnotationDF]:
     """Retrieve seizure labels parsing the ``.tse[_bi]`` and the ``.lbl[_bi]`` files corresponding
     to the ``.edf`` file at *file_path*.
 
@@ -124,7 +135,7 @@ def read_labels(edf_path: Path, binary: bool) -> DataFrame[AnnotationDF]:
             read_tse(tse_path),
             read_lbl(lbl_path),
         ]
-    )
+    ).pipe(map_labels, label_map=label_map)
 
     df[AnnotationDF.patient] = edf_path.parents[1].stem
     df[AnnotationDF.session] = edf_path.stem
