@@ -51,8 +51,12 @@ def process_annotations(
 def make_clips(
     annotations: DataFrame[AnnotationDF],
     clip_length: int,
+    clip_stride: int,
 ) -> DataFrame[AnnotationDF]:
-    "Split annotations dataframe in dataframe of non-overlapping clips"
+    "Split annotations dataframe in dataframe of clips"
+    if clip_length < 0:
+        return annotations.sort_index()
+
     annotations = annotations.reset_index()
     start_times, end_times = (
         annotations[AnnotationDF.start_time],
@@ -60,9 +64,9 @@ def make_clips(
     )
 
     out_list = []
-    for clip_idx in range(int(end_times.max() / clip_length)):
-        clip_start = clip_idx * clip_length
-        clip_end = (clip_idx + 1) * clip_length
+    for clip_idx in range(int(end_times.max() / clip_stride)):
+        clip_start = clip_idx * clip_stride
+        clip_end = clip_start + clip_length
 
         bool_mask = (start_times <= clip_start) & (clip_end <= end_times)
 
@@ -91,9 +95,11 @@ def make_dataset(
     root_folder: Path,
     *,
     clip_length: int,
+    clip_stride: int,
     label_map: Dict[str, str],
     binary: bool,
     sampling_rate: int,
+    node_level: bool,
     diff_channels: bool,
     load_existing: Optional[bool] = False,
     clips_save_path: Optional[Path] = None,
@@ -107,9 +113,15 @@ def make_dataset(
         clips_df = make_clips(
             annotations=process_annotations(root_folder, label_map=label_map, binary=binary),
             clip_length=clip_length,
+            clip_stride=clip_stride,
         )
 
         if clips_save_path:
             write_parquet(clips_df, clips_save_path)
 
-    return EEGDataset(clips_df, sampling_rate=sampling_rate, diff_channels=diff_channels)
+    return EEGDataset(
+        clips_df,
+        sampling_rate=sampling_rate,
+        node_level=node_level,
+        diff_channels=diff_channels,
+    )

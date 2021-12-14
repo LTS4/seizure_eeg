@@ -29,8 +29,10 @@ def main(cfg: DictConfig):
         eeg_data = make_dataset(
             root_folder=raw_edf_folder / split,
             clip_length=cfg.data.signals.clip_length,
+            clip_stride=cfg.data.signals.clip_stride,
             label_map=OmegaConf.to_container(cfg.data.labels.map),
             binary=cfg.data.labels.binary,
+            node_level=cfg.data.labels.node_level,
             load_existing=cfg.data.load_existing,
             # Dataset options
             clips_save_path=output_folder / split / "clips.parquet",
@@ -40,9 +42,8 @@ def main(cfg: DictConfig):
 
         logging.info("Created %s dataset - # samples: %d", split.upper(), len(eeg_data))
 
-        for i in range(len(eeg_data)):
+        for i, sample in enumerate(eeg_data):
             print(i)
-            sample = eeg_data[i]
             print("Label:", sample[0])
             print("Signals:", sample[1].shape)
 
