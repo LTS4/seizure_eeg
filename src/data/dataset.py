@@ -26,8 +26,6 @@ class EEGDataset(Dataset):
 
         self.clips_df = clips_df
 
-        print(self.clips_df)
-
         if diff_channels:
             self.diff_labels = get_channels(clips_df).drop(GLOBAL_CHANNEL)
         else:
@@ -73,13 +71,6 @@ class EEGDataset(Dataset):
             sampling_rate_out=self.sampling_rate,
             diff_labels=self.diff_labels,
         ).values[start_sample:end_sample]
-
-        # if not write_parquet(
-        #     signals,
-        #     path=output_folder / edf_path.stem / FILE_SIGNALS,
-        #     force_rewrite=force_rewrite,
-        # ):
-        #     nb_existing += 1
 
         return torch.tensor(label, device=self.device), torch.tensor(signals, device=self.device)
 

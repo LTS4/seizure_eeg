@@ -3,7 +3,9 @@
 import logging
 from pathlib import Path
 
+import torch
 from omegaconf import DictConfig, OmegaConf
+from torch.utils import data
 
 from src.data.tusz.dataset import make_dataset
 from src.run import run
@@ -23,29 +25,34 @@ def main(cfg: DictConfig):
     raw_edf_folder = Path(cfg.data.tusz.raw_edf)
     output_folder = Path(cfg.data.tusz.processed)
 
+    load_existing = cfg.data.load_existing
+
     for split in cfg.data.tusz.splits:
-        logging.info("Creating %s dataset", split.upper())
+        dataset_path = output_folder / split / "data.pt"
 
-        eeg_data = make_dataset(
-            root_folder=raw_edf_folder / split,
-            clip_length=cfg.data.signals.clip_length,
-            clip_stride=cfg.data.signals.clip_stride,
-            label_map=OmegaConf.to_container(cfg.data.labels.map),
-            binary=cfg.data.labels.binary,
-            node_level=cfg.data.labels.node_level,
-            load_existing=cfg.data.load_existing,
-            # Dataset options
-            clips_save_path=output_folder / split / "clips.parquet",
-            sampling_rate=cfg.data.signals.sampling_rate,
-            diff_channels=cfg.data.signals.diff_channels,
-        )
+        if load_existing and dataset_path.is_file():
+            logging.info("Skipping %s dataset at %s", split.upper(), dataset_path)
+        else:
 
-        logging.info("Created %s dataset - # samples: %d", split.upper(), len(eeg_data))
+            logging.info("Creating %s dataset", split.upper())
 
-        for i, sample in enumerate(eeg_data):
-            print(i)
-            print("Label:", sample[0])
-            print("Signals:", sample[1].shape)
+            eeg_data = make_dataset(
+                root_folder=raw_edf_folder / split,
+                clip_length=cfg.data.signals.clip_length,
+                clip_stride=cfg.data.signals.clip_stride,
+                label_map=OmegaConf.to_container(cfg.data.labels.map),
+                binary=cfg.data.labels.binary,
+                node_level=cfg.data.labels.node_level,
+                load_existing=cfg.data.load_existing,
+                # Dataset options
+                clips_save_path=output_folder / split / "clips.parquet",
+                sampling_rate=cfg.data.signals.sampling_rate,
+                diff_channels=cfg.data.signals.diff_channels,
+            )
+
+            logging.info("Created %s dataset - # samples: %d", split.upper(), len(eeg_data))
+
+            torch.save(eeg_data, dataset_path)
 
 
 if __name__ == "__main__":
