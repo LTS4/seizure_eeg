@@ -37,7 +37,7 @@ class AnnotationDF(pa.SchemaModel):
     session: Index[str]
     segment: Index[int]
 
-    label: Series[str]
+    label: Series[int]
     start_time: Series[float]
     end_time: Series[float]
     date: Series[DateTime]
