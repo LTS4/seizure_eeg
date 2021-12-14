@@ -1,9 +1,8 @@
 from typing import List, Optional, Tuple, Union
 
 import torch
-from pandas.core.indexing import IndexSlice
+from pandas import IndexSlice as idx
 from pandera.typing import DataFrame
-from torch._C import device
 from torch.utils.data import Dataset
 
 from src.data.schemas import AnnotationDF
@@ -48,7 +47,7 @@ class EEGDataset(Dataset):
         if node_level:
             self._clips_df = self.clips_df.drop(GLOBAL_CHANNEL).groupby(AnnotationDF.channel)
         else:
-            self._clips_df = self.clips_df.loc["global"]
+            self._clips_df = self.clips_df.loc[idx[:, :, :, GLOBAL_CHANNEL]]
 
     def _get_from_df(self, index: int) -> Tuple[Union[int, List[int]], float, float, str]:
         if self._node_level:

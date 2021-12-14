@@ -7,15 +7,15 @@ from src.data.tusz.constants import REGEX_SIGNAL_CHANNELS
 
 class LabelDF(pa.SchemaModel):
     """
-    ======= =======  ===== ========== ========
+    ======= ======= ===== ========== ========
     Columns
     ------------------------------------------
-    channel segment  label start_time end_time
-    ======= =======  ===== ========== ========
+    segment channel label start_time end_time
+    ======= ======= ===== ========== ========
     """
 
-    channel: Series[str]
     segment: Series[int]
+    channel: Series[str]
 
     label: Series[str]
     start_time: Series[float]
@@ -28,14 +28,14 @@ class AnnotationDF(pa.SchemaModel):
     ======= ======= ======= =======  ===== ========== ======== ==== ========
     Multiindex                       Columns
     -------------------------------  ---------------------------------------
-    patient session channel segment  label start_time end_time date edf_path
+    patient session segment channel  label start_time end_time date edf_path
     ======= ======= ======= =======  ===== ========== ======== ==== ========
     """
 
-    channel: Index[str]
     patient: Index[str]
     session: Index[str]
     segment: Index[int]
+    channel: Index[str]
 
     label: Series[int]
     start_time: Series[float]

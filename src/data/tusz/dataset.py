@@ -3,7 +3,9 @@ import logging
 from pathlib import Path
 from typing import Dict, Optional
 
+import numpy as np
 import pandas as pd
+from pandera import check_types
 from pandera.typing import DataFrame
 from tqdm import tqdm
 
@@ -48,6 +50,7 @@ def process_annotations(
     return pd.concat(annotations_list, ignore_index=False)
 
 
+@check_types
 def make_clips(
     annotations: DataFrame[AnnotationDF],
     clip_length: int,
@@ -57,15 +60,16 @@ def make_clips(
     if clip_length < 0:
         return annotations.sort_index()
 
+    index_names = annotations.index.names
     annotations = annotations.reset_index()
+
     start_times, end_times = (
         annotations[AnnotationDF.start_time],
         annotations[AnnotationDF.end_time],
     )
 
     out_list = []
-    for clip_idx in range(int(end_times.max() / clip_stride)):
-        clip_start = clip_idx * clip_stride
+    for clip_idx, clip_start in enumerate(np.arange(0, end_times.max(), clip_stride)):
         clip_end = clip_start + clip_length
 
         bool_mask = (start_times <= clip_start) & (clip_end <= end_times)
@@ -78,13 +82,7 @@ def make_clips(
         )
         out_list.append(copy_vals)
 
-    return (
-        pd.concat(out_list)  #
-        .set_index(
-            [AnnotationDF.channel, AnnotationDF.patient, AnnotationDF.session, AnnotationDF.segment]
-        )  #
-        .sort_index()
-    )
+    return pd.concat(out_list).set_index(index_names).sort_index()
 
 
 ################################################################################

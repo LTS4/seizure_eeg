@@ -143,7 +143,7 @@ def read_labels(edf_path: Path, label_map: Dict[str, str], binary: bool) -> Data
     df[AnnotationDF.edf_path] = str(edf_path.absolute())
 
     return df.set_index(
-        [AnnotationDF.channel, AnnotationDF.patient, AnnotationDF.session, AnnotationDF.segment]
+        [AnnotationDF.patient, AnnotationDF.session, AnnotationDF.segment, AnnotationDF.channel]
     )
 
 
