@@ -1,18 +1,23 @@
+"""EEG Data class with common data retrieval"""
 from typing import List, Optional, Tuple, Union
 
 import torch
 from pandas import IndexSlice as idx
+from pandera import check_types
 from pandera.typing import DataFrame
 from torch.utils.data import Dataset
 
 from src.data.schemas import AnnotationDF
-from src.data.tusz.constants import GLOBAL_CHANNEL
 from src.data.tusz.annotations.process import get_channels
+from src.data.tusz.constants import GLOBAL_CHANNEL
 from src.data.tusz.signals.io import read_eeg_signals
 from src.data.tusz.signals.process import process_signals
 
 
 class EEGDataset(Dataset):
+    """Dataset of EEG clips with seizure labels"""
+
+    @check_types
     def __init__(
         self,
         clips_df: DataFrame[AnnotationDF],
@@ -22,6 +27,20 @@ class EEGDataset(Dataset):
         diff_channels: Optional[bool] = True,
         device: Optional[str] = None,
     ) -> None:
+        """Dataset of EEG clips with seizure labels
+
+        Args:
+            clips_df (DataFrame[AnnotationDF]): Pandas dataframe of EEG clips
+            sampling_rate (int): Samplking rate of EEG signals
+            node_level (Optional[bool]): Wheter to get node-level or global labels
+                (only latter is currently supported)
+            diff_channels (Optional[bool], optional): Wether to retrieve differential signal or raw.
+                Defaults to True, i.e. differential.
+            device (Optional[str], optional): Torch device. Defaults to None.
+
+        Raises:
+            ValueError: If node_level is true and diff_channels is false
+        """
         super().__init__()
 
         self.clips_df = clips_df
@@ -40,6 +59,7 @@ class EEGDataset(Dataset):
         self.sampling_rate = sampling_rate
 
     def node_level(self, node_level: bool):
+        """Setter for the node-level labels retrieval"""
         self._node_level = node_level
 
         if node_level:
