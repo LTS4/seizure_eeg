@@ -33,7 +33,10 @@ def read_eeg_signals(edf_path: Path) -> Tuple[DataFrame[SignalsDF], int]:
     Returns:
         Tuple[DataFrame, int]: signals, sampling_rate
     """
-    edf_reader = pyedflib.EdfReader(str(edf_path))
+    try:
+        edf_reader = pyedflib.EdfReader(str(edf_path))
+    except OSError as err:
+        raise OSError(f"Error from file {edf_path}") from err
 
     signal_channels = edf_reader.getSignalLabels()
     n_channels = edf_reader.signals_in_file
