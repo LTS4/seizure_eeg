@@ -61,18 +61,21 @@ def get_diff_signals_buggy(signals: DataFrame[SignalsDF], label_channels: Index[
 def get_diff_signals(signals: DataFrame[SignalsDF], label_channels: List[str]):
     """Take as input a signals dataframe and return the columm differences specified in
     *label_channels*"""
-    loc_signals = pd.DataFrame(
+    diff_signals = pd.DataFrame(
         np.empty((len(signals), len(label_channels))), columns=label_channels
     )
 
-    for diff_label in label_channels:
-        el1, el2 = diff_label.split("-")
-        loc_signals[diff_label] = (
-            signals[TEMPLATE_SIGNAL_CHANNELS.format(el1)]
-            - signals[TEMPLATE_SIGNAL_CHANNELS.format(el2)]
-        )
+    try:
+        for diff_label in label_channels:
+            el1, el2 = diff_label.split("-")
+            diff_signals[diff_label] = (
+                signals[TEMPLATE_SIGNAL_CHANNELS.format(el1)]
+                - signals[TEMPLATE_SIGNAL_CHANNELS.format(el2)]
+            )
+    except KeyError as err:
+        raise KeyError(f"Available keys: {signals.columns.tolist()}") from err
 
-    return loc_signals
+    return diff_signals
 
 
 ####################################################################################################

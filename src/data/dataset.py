@@ -47,7 +47,8 @@ class EEGDataset(Dataset):
         self.clips_df = clips_df
 
         if diff_channels:
-            self.diff_labels = get_channels(clips_df).drop(GLOBAL_CHANNEL)
+            raise NotImplementedError("TODO: solve that not all files have the same differences")
+            # self.diff_labels = get_channels(clips_df).drop(GLOBAL_CHANNEL)
         else:
             if node_level:
                 raise ValueError("Diff channels are compulsory when working ad node level")
@@ -89,15 +90,21 @@ class EEGDataset(Dataset):
         start_sample = int(start_time * sr_in)
         end_sample = int(end_time * sr_in)
 
-        signals = process_signals(
-            signals=signals.iloc[start_sample:end_sample],
-            sampling_rate_in=sr_in,
-            sampling_rate_out=self.sampling_rate,
-            window_len=self.window_len,
-            diff_labels=self.diff_labels,
-        )
+        try:
+            signals = process_signals(
+                signals=signals.iloc[start_sample:end_sample],
+                sampling_rate_in=sr_in,
+                sampling_rate_out=self.sampling_rate,
+                window_len=self.window_len,
+                diff_labels=self.diff_labels,
+            )
+        except KeyError as err:
+            raise KeyError(f"Error in {edf_path}") from err
 
-        return torch.tensor(signals, device=self.device), torch.tensor(label, device=self.device)
+        return (
+            torch.tensor(signals, dtype=torch.float32, device=self.device),
+            torch.tensor(label, dtype=torch.long, device=self.device),
+        )
 
     def __len__(self) -> int:
         return len(self.clips_df)
