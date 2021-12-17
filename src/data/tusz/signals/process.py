@@ -114,6 +114,10 @@ def process_signals(
 
     # 3. Split windows
     if window_len > 0:
-        signals = np.stack(np.split(signals, window_len * sampling_rate_out, axis=0), axis=0)
+        signals = signals.reshape(
+            signals.shape[0] // window_len,  # nb of windows
+            window_len,  # nb of samples per window
+            signals.shape[1],  # nb of signals
+        )
 
     return signals
