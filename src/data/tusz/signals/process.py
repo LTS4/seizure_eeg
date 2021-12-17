@@ -14,26 +14,26 @@ from src.data.tusz.constants import TEMPLATE_SIGNAL_CHANNELS
 
 
 def resample_signals(
-    signals: DataFrame, sampling_rate_in: int, sampling_rate_out: int
-) -> DataFrame:
+    signals: np.ndarray, sampling_rate_in: int, sampling_rate_out: int
+) -> np.ndarray:
     """Resample signals dataframe
 
     Args:
-        signals (DataFrame): DataFrame of time series
-        sampling_rate_in (int): sampling rate of input DF
+        signals (np.ndarray): array of time series, with time on axis 0
+        sampling_rate_in (int): sampling rate of input data
         sampling_rate_out (int): desired sampling rate
 
     Raises:
         ValueError: If *sampling_rate_out* is greater than *sampling_rate_in*
 
     Returns:
-        DataFrame: Resampled dataframe with same columns as input one
+        np.ndarray: Resampled array
     """
 
     # Resample to target rate in Hz = samples/sec. Do nothing if already at required freq
     if sampling_rate_out < sampling_rate_in:
         out_num = int(len(signals) / sampling_rate_in * sampling_rate_out)
-        signals = pd.DataFrame(resample(signals, num=out_num, axis=0), columns=signals.columns)
+        signals = resample(signals, num=out_num, axis=0)
     elif sampling_rate_out > sampling_rate_in:
         raise ValueError(
             f"Required sampling rate {sampling_rate_out} higher than file rate {sampling_rate_in}"
@@ -83,13 +83,15 @@ def process_signals(
     signals: DataFrame,
     sampling_rate_in: int,
     sampling_rate_out: int,
+    window_len: Optional[int] = -1,
     diff_labels: Optional[Index[str]] = None,
-) -> DataFrame:
+) -> np.ndarray:
     """Process signals read from edf file.
 
     Processing steps:
         1. (opt) Subtract pairwise columns
         2. Resample signals
+        3. Split signals in windows
 
     Args:
         signals (DataFrame): Dataframe of signals of shape ``nb_samples x nb_channels``
@@ -109,5 +111,9 @@ def process_signals(
 
     # 2. Resample signals
     signals = resample_signals(signals, sampling_rate_in, sampling_rate_out)
+
+    # 3. Split windows
+    if window_len > 0:
+        signals = np.stack(np.split(signals, window_len * sampling_rate_out, axis=0), axis=0)
 
     return signals

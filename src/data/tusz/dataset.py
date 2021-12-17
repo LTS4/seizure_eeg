@@ -21,6 +21,7 @@ def make_dataset(
     label_map: Dict[str, str],
     binary: bool,
     sampling_rate: int,
+    window_len: int,
     node_level: bool,
     diff_channels: bool,
     load_existing: Optional[bool] = False,
@@ -46,6 +47,7 @@ def make_dataset(
     return EEGDataset(
         clips_df,
         sampling_rate=sampling_rate,
+        window_len=window_len,
         node_level=node_level,
         diff_channels=diff_channels,
     )

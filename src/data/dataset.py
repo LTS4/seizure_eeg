@@ -23,7 +23,8 @@ class EEGDataset(Dataset):
         clips_df: DataFrame[AnnotationDF],
         *,
         sampling_rate: int,
-        node_level: Optional[bool],
+        window_len: Optional[int] = -1,
+        node_level: Optional[bool] = False,
         diff_channels: Optional[bool] = True,
         device: Optional[str] = None,
     ) -> None:
@@ -57,6 +58,7 @@ class EEGDataset(Dataset):
 
         self.device = device
         self.sampling_rate = sampling_rate
+        self.window_len = window_len
 
     def node_level(self, node_level: bool):
         """Setter for the node-level labels retrieval"""
@@ -83,16 +85,19 @@ class EEGDataset(Dataset):
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
         label, start_time, end_time, edf_path = self._get_from_df(index)
 
-        start_sample = int(start_time * self.sampling_rate)
-        end_sample = int(end_time * self.sampling_rate)
+        signals, sr_in = read_eeg_signals(edf_path)
+        start_sample = int(start_time * sr_in)
+        end_sample = int(end_time * sr_in)
 
         signals = process_signals(
-            *read_eeg_signals(edf_path),
+            signals=signals.iloc[start_sample:end_sample],
+            sampling_rate_in=sr_in,
             sampling_rate_out=self.sampling_rate,
+            window_len=self.window_len,
             diff_labels=self.diff_labels,
-        ).values[start_sample:end_sample]
+        )
 
-        return torch.tensor(label, device=self.device), torch.tensor(signals, device=self.device)
+        return torch.tensor(signals, device=self.device), torch.tensor(label, device=self.device)
 
     def __len__(self) -> int:
         return len(self.clips_df)
