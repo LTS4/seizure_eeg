@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 """Main module for dataset creation"""
 import logging
+import os
 from pathlib import Path
 
 import torch
+from dotenv import find_dotenv, load_dotenv
 from omegaconf import DictConfig, OmegaConf
 
 from src.data.tusz.dataset import make_dataset
+from src.data.tusz.download import download
 from src.run import run
 
 ################################################################################
@@ -21,8 +24,17 @@ def main(cfg: DictConfig):
     """Runs data processing scripts to turn raw data from (../raw) into
     cleaned data ready to be analyzed (saved in ../processed).
     """
+    load_dotenv(find_dotenv())
+
     raw_edf_folder = Path(cfg.data.tusz.raw_edf)
     output_folder = Path(cfg.data.tusz.processed)
+
+    # Download data
+    download(
+        source=cfg.data.tusz.source,
+        target=cfg.data.tusz.raw,
+        password=os.environ["NEDC_PASSWORD"],
+    )
 
     for split in cfg.data.tusz.splits:
         dataset_path = output_folder / split / "data.pt"
