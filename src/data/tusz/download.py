@@ -1,7 +1,6 @@
 """Download data from TUH server with rsync"""
 import sys
 from pathlib import Path
-from time import sleep
 
 import pexpect
 
@@ -28,7 +27,7 @@ def authenticate(child: pexpect.spawn, password: str):
 
         scase = child.expect_exact(
             [
-                "receiving file list",
+                "receiving",
                 "Permission denied, please try again.",
             ],
             timeout=None,
