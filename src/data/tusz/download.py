@@ -6,40 +6,59 @@ from time import sleep
 import pexpect
 
 
-def download(source: Path, target: Path, password: str):
-    """Download data from `source` to `target`"""
+def authenticate(child: pexpect.spawn, password: str):
+    """Authenticate to nedc@www.isip.piconepress.com in child precess
 
-    success = False
-    while not success:
-        # spawn rsync
-        child = pexpect.spawn(
-            f"rsync -auxvL nedc@www.isip.piconepress.com:data/{source} {target}", encoding="utf-8"
-        )
-        child.logfile_read = sys.stdout
+    Args:
+        child (pexpect.spawn): pexpect process
+        password (str): Password for nedc@www.isip.piconepress.com
 
-        case1 = child.expect_exact(
-            ["nedc@www.isip.piconepress.com's password: ", pexpect.EOF],
-            timeout=None,
-        )
-        if case1 == 0:
-            child.sendline(password)
-        else:
-            sleep(10)
-            continue
+    Raises:
+        ValueError: If password is invalid
+    """
+    case = child.expect_exact(
+        [
+            "nedc@www.isip.piconepress.com's password: ",
+            "ECDSA key fingerprint is SHA256:J+iAVuYB8jswRPDMSet9qGWVL5xrPJ4RDe7w9LSKRyY",
+        ],
+        timeout=None,
+    )
+    if case == 0:
+        child.sendline(password)
 
-        case2 = child.expect_exact(
+        scase = child.expect_exact(
             [
                 "receiving file list",
                 "Permission denied, please try again.",
-                pexpect.EOF,
             ],
             timeout=None,
         )
-        if case2 == 0:
-            child.expect(pexpect.EOF, timeout=None)
-            child.close()
-
-            if child.exitstatus == 0:
-                success = True
-        elif case2 == 1:
+        if scase == 0:
+            return
+        if scase == 1:
             raise ValueError("Invalid password, verify your .env file or NEDC_PASSWORD variable")
+
+    elif case == 1:
+        child.expect_exact("Are you sure you want to continue connecting (yes/no)? ")
+        child.send("yes")
+
+        authenticate(child, password)
+
+
+def download(source: Path, target: Path, password: str):
+    """Download data from `source` to `target`"""
+    while True:
+        # spawn rsync
+        child = pexpect.spawn(
+            f"rsync -auxvL nedc@www.isip.piconepress.com:data/{source} {target}",
+            encoding="utf-8",
+        )
+        child.logfile_read = sys.stdout
+
+        authenticate(child, password)
+
+        child.expect(pexpect.EOF, timeout=None)
+        child.close()
+
+        if child.exitstatus == 0:
+            return
