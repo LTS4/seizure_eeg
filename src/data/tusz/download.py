@@ -40,7 +40,7 @@ def authenticate(child: pexpect.spawn, password: str):
 
     elif case == 1:
         child.expect_exact("Are you sure you want to continue connecting (yes/no)? ")
-        child.send("yes")
+        child.sendline("yes")
 
         authenticate(child, password)
 
