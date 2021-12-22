@@ -29,12 +29,16 @@ def main(cfg: DictConfig):
     raw_edf_folder = Path(cfg.data.tusz.raw_edf)
     output_folder = Path(cfg.data.tusz.processed)
 
-    # Download data
-    download(
-        source=cfg.data.tusz.source,
-        target=cfg.data.tusz.raw,
-        password=os.environ["NEDC_PASSWORD"],
-    )
+    # Download data if missing folders
+    if cfg.data.tusz.force_download or (
+        not set(cfg.data.tusz.splits) <= {x.stem for x in raw_edf_folder.iterdir()}
+    ):
+        logging.info("Downloading data")
+        download(
+            source=cfg.data.tusz.source,
+            target=cfg.data.tusz.raw,
+            password=os.environ["NEDC_PASSWORD"],
+        )
 
     for split in cfg.data.tusz.splits:
         dataset_path = output_folder / split / "data.pt"
