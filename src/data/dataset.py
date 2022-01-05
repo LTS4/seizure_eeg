@@ -8,7 +8,6 @@ from pandera.typing import DataFrame
 from torch.utils.data import Dataset
 
 from src.data.schemas import AnnotationDF
-from src.data.tusz.annotations.process import get_channels
 from src.data.tusz.constants import GLOBAL_CHANNEL
 from src.data.tusz.signals.io import read_eeg_signals
 from src.data.tusz.signals.process import process_signals
@@ -46,15 +45,10 @@ class EEGDataset(Dataset):
 
         self.clips_df = clips_df
 
-        if diff_channels:
-            raise NotImplementedError("TODO: solve that not all files have the same differences")
-            # self.diff_labels = get_channels(clips_df).drop(GLOBAL_CHANNEL)
-        else:
-            if node_level:
-                raise ValueError("Diff channels are compulsory when working ad node level")
+        if node_level and not diff_channels:
+            raise ValueError("Diff channels are compulsory when working ad node level")
 
-            self.diff_labels = None
-
+        self.diff_channels = diff_channels
         self.node_level(node_level)
 
         self.device = device
@@ -74,7 +68,7 @@ class EEGDataset(Dataset):
         if self._node_level:
             raise NotImplementedError
 
-        return self.clips_df.iloc[index][
+        return self._clips_df.iloc[index][
             [
                 AnnotationDF.label,
                 AnnotationDF.start_time,
@@ -90,16 +84,13 @@ class EEGDataset(Dataset):
         start_sample = int(start_time * sr_in)
         end_sample = int(end_time * sr_in)
 
-        try:
-            signals = process_signals(
-                signals=signals.iloc[start_sample:end_sample],
-                sampling_rate_in=sr_in,
-                sampling_rate_out=self.sampling_rate,
-                window_len=self.window_len,
-                diff_labels=self.diff_labels,
-            )
-        except KeyError as err:
-            raise KeyError(f"Error in {edf_path}") from err
+        signals = process_signals(
+            signals=signals.iloc[start_sample:end_sample],
+            sampling_rate_in=sr_in,
+            sampling_rate_out=self.sampling_rate,
+            window_len=self.window_len,
+            diff_channels=self.diff_channels,
+        )
 
         return (
             torch.tensor(signals, dtype=torch.float32, device=self.device),
@@ -107,4 +98,4 @@ class EEGDataset(Dataset):
         )
 
     def __len__(self) -> int:
-        return len(self.clips_df)
+        return len(self._clips_df)
