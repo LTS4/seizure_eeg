@@ -1,6 +1,7 @@
 """I/O functions for EDF signals"""
+import re
 from pathlib import Path
-from typing import Tuple
+from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -9,6 +10,7 @@ from pandera import check_types
 from pandera.typing import DataFrame
 
 from src.data.schemas import SignalsDF
+from src.data.tusz.constants import CHANNELS, REGEX_SIGNAL_CHANNELS
 
 
 def fix_channel_name(name: str) -> str:
@@ -18,6 +20,14 @@ def fix_channel_name(name: str) -> str:
         - change "EEG {ch}-LE" to "EEG {ch}-REF"
     """
     return name.replace("-LE", "-REF")
+
+
+def format_channel_names(names: List[str]) -> List[str]:
+    return [
+        match.group("ch") if match else None
+        for name in names
+        for match in (re.match(REGEX_SIGNAL_CHANNELS, name),)
+    ]
 
 
 @check_types
@@ -38,7 +48,7 @@ def read_eeg_signals(edf_path: Path) -> Tuple[DataFrame[SignalsDF], int]:
     except OSError as err:
         raise OSError(f"Error from file {edf_path}") from err
 
-    signal_channels = edf_reader.getSignalLabels()
+    signal_channels = format_channel_names(edf_reader.getSignalLabels())
     n_channels = edf_reader.signals_in_file
 
     if n_channels != len(signal_channels):
@@ -57,7 +67,7 @@ def read_eeg_signals(edf_path: Path) -> Tuple[DataFrame[SignalsDF], int]:
     for i, (ch_name, ch_samples, ch_rate) in enumerate(
         zip(signal_channels, nb_samples, sampling_rates)
     ):
-        if ch_name.startswith("EEG"):
+        if ch_name in CHANNELS:
             if ref_rate is None:
                 ref_samples = ch_samples
                 ref_rate = int(ch_rate)
