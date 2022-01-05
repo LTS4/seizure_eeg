@@ -64,14 +64,10 @@ def get_diff_signals(signals: DataFrame[SignalsDF], label_channels: List[str]):
     loc_signals = pd.DataFrame(
         np.empty((len(signals), len(label_channels))), columns=label_channels
     )
-    print(loc_signals)
-    input()
 
     for diff_label in label_channels:
         el1, el2 = diff_label.split("-")
         loc_signals.loc[:, diff_label] = (signals[el1] - signals[el2]).values
-    print(loc_signals)
-    input()
 
     return loc_signals
 
