@@ -2,7 +2,7 @@
 import pandera as pa
 from pandera.typing import DateTime, Index, Series
 
-from src.data.tusz.constants import REGEX_SIGNAL_CHANNELS
+from src.data.tusz.constants import CHANNELS, REGEX_SIGNAL_CHANNELS, SIGNAL_CHANNELS_FMT
 
 
 class LabelDF(pa.SchemaModel):
@@ -57,4 +57,4 @@ class AnnotationDF(pa.SchemaModel):
 class SignalsDF(pa.SchemaModel):
     """Class for eeg signals: columns are channels names and rows are samples"""
 
-    channel: Series[float] = pa.Field(alias=REGEX_SIGNAL_CHANNELS, regex=True)
+    channel: Series[float] = pa.Field(alias="|".join(CHANNELS), regex=True)
