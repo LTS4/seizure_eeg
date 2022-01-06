@@ -1,5 +1,6 @@
 """I/O functions for EDF signals"""
 import re
+from functools import lru_cache
 from pathlib import Path
 from typing import List, Tuple
 
@@ -30,6 +31,7 @@ def format_channel_names(names: List[str]) -> List[str]:
     ]
 
 
+@lru_cache(maxsize=3)
 @check_types
 def read_eeg_signals(edf_path: Path) -> Tuple[DataFrame[SignalsDF], int]:
     """Get EEG signals and names from  edf file
