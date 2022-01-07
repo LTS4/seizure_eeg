@@ -97,5 +97,8 @@ class EEGDataset(Dataset):
             torch.tensor(label, dtype=torch.long, device=self.device),
         )
 
+    def get_label_array(self):
+        return self._clips_df[AnnotationDF.label].values
+
     def __len__(self) -> int:
         return len(self._clips_df)
