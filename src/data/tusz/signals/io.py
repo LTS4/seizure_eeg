@@ -1,6 +1,7 @@
 """I/O functions for EDF signals"""
 import re
 from functools import lru_cache
+from multiprocessing import Pool
 from pathlib import Path
 from typing import List, Tuple
 
@@ -31,7 +32,7 @@ def format_channel_names(names: List[str]) -> List[str]:
     ]
 
 
-@lru_cache(maxsize=3)
+# @lru_cache
 @check_types
 def read_eeg_signals(edf_path: Path) -> Tuple[DataFrame[SignalsDF], int]:
     """Get EEG signals and names from  edf file
@@ -63,28 +64,33 @@ def read_eeg_signals(edf_path: Path) -> Tuple[DataFrame[SignalsDF], int]:
 
     sampling_rates = edf_reader.getSampleFrequencies()
 
-    signals = pd.DataFrame()
-    ref_rate = None
+    # Prepare list to be read and validate metadata
+    try:
+        to_read = [signal_channels.index(chl) for chl in CHANNELS]
+    except ValueError as err:
+        raise ValueError(f"File {edf_path} does not contain all needed channels") from err
 
-    for i, (ch_name, ch_samples, ch_rate) in enumerate(
-        zip(signal_channels, nb_samples, sampling_rates)
-    ):
-        if ch_name in CHANNELS:
-            if ref_rate is None:
-                ref_samples = ch_samples
-                ref_rate = int(ch_rate)
+    nb_samples = nb_samples[to_read]
+    assert np.allclose(
+        nb_samples, nb_samples[0]
+    ), f"EEG channels with different lenght in {edf_path}"
 
-            assert (
-                ch_samples == ref_samples
-            ), f"Channel '{ch_name}' has length {ch_samples}, expecting {ref_samples}"
+    sampling_rates = sampling_rates[to_read]
+    assert np.allclose(np.modf(sampling_rates)[0], 0), f"Non-integer sampling rate in {edf_path}"
+    assert np.allclose(
+        sampling_rates, sampling_rates[0]
+    ), f"EEG channels with different sampling rates in {edf_path}"
+    ref_rate = sampling_rates[0]
 
-            assert np.allclose(
-                np.modf(ch_rate)[0], 0
-            ), f"Non-integer sampling rate in {ch_name}: {ch_rate}"
-            assert (
-                ch_rate == ref_rate
-            ), f"Channel '{ch_name}' has sampling rate {ch_rate}, expecting {ref_rate}"
+    # signals[ch_name] = edf_reader.readSignal(i)
 
-            signals[fix_channel_name(ch_name)] = edf_reader.readSignal(i)
+    signals = pd.DataFrame(
+        data=np.array([edf_reader.readSignal(i) for i in to_read]).T,
+        columns=CHANNELS,
+    )
 
     return signals, ref_rate
+
+
+def read_signal(edf_reader: pyedflib.EdfReader, ch_idx: int):
+    return edf_reader.readSignal(ch_idx)
