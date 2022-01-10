@@ -17,11 +17,9 @@ import numpy as np
 import pandas as pd
 from pandera import check_types
 from pandera.typing import DataFrame, Index
-from tqdm import tqdm
 
 from src.data.schemas import AnnotationDF, LabelDF
 from src.data.tusz.annotations.io import read_labels
-from src.data.tusz.io import list_all_edf_files
 from src.data.tusz.utils import extract_session_date
 
 
@@ -64,12 +62,20 @@ def make_clips(
     return pd.concat(out_list).set_index(index_names).sort_index()
 
 
-def labels_to_annotations(df: DataFrame[LabelDF], edf_path: Path) -> DataFrame[AnnotationDF]:
-    """Add [patient, session, date, path] columns, extrapolating from edf_path"""
+def labels_to_annotations(
+    df: DataFrame[LabelDF],
+    edf_path: Path,
+    signals_path: Path,
+    sampling_rate: int,
+) -> DataFrame[AnnotationDF]:
+    """Add [patient, session, date, sampling_rate, signals_path] columns.
+    patient, session, and date are extrapolated from edf_path"""
     df[AnnotationDF.patient] = edf_path.parents[1].stem
     df[AnnotationDF.session] = edf_path.stem
     df[AnnotationDF.date] = extract_session_date(edf_path.parents[0].stem)
-    df[AnnotationDF.edf_path] = str(edf_path.absolute())
+
+    df[AnnotationDF.sampling_rate] = sampling_rate
+    df[AnnotationDF.signals_path] = str(signals_path.absolute())
     return df
 
 
@@ -83,54 +89,39 @@ def map_labels(df: DataFrame, label_map: Dict[str, int]) -> DataFrame:
     return df
 
 
+@check_types
 def process_annotations(
-    root_folder: Path,
+    edf_path: Path,
     *,
     label_map: Dict[str, int],
     binary: bool,
-    clip_length: int,
-    clip_stride: int,
+    signals_path: Path,
+    sampling_rate: int,
 ) -> DataFrame[AnnotationDF]:
-    """Precess every file in the root_folder tree"""
-    logger = logging.getLogger(__name__)
+    """Read annotations files associated to *edf_path* and add metadata
 
-    file_list = list_all_edf_files(root_folder)
+    Args:
+        edf_path (Path): [description]
+        label_map (Dict[str, int]): [description]
+        binary (bool): [description]
+        signals_path (Path): [description]
+        sampling_rate (int): [description]
 
-    nb_errors_skipped = 0
-
-    annotations_list = []
-
-    for edf_path in tqdm(file_list, desc=f"{root_folder}"):
-        try:
-
-            annotations = (
-                read_labels(edf_path, binary=binary)
-                .pipe(labels_to_annotations, edf_path)
-                .pipe(map_labels, label_map=label_map)
-                .set_index(
-                    [
-                        AnnotationDF.patient,
-                        AnnotationDF.session,
-                        AnnotationDF.segment,
-                        AnnotationDF.channel,
-                    ]
-                )
-            )
-            annotations_list.append(annotations)
-
-        except (IOError, AssertionError) as err:
-            logger.info(
-                "Skipping file %s wich raises %s: \n\t%s", edf_path, type(err).__name__, err
-            )
-            nb_errors_skipped += 1
-
-    if nb_errors_skipped:
-        logger.warning(
-            "Skipped %d files raising errors, set level to INFO for details", nb_errors_skipped
+    Returns:
+        [type]: [description]
+    """
+    return (
+        read_labels(edf_path, binary=binary)
+        .pipe(labels_to_annotations, edf_path, signals_path, sampling_rate)
+        .pipe(map_labels, label_map=label_map)
+        .set_index(
+            [
+                AnnotationDF.patient,
+                AnnotationDF.session,
+                AnnotationDF.segment,
+                AnnotationDF.channel,
+            ]
         )
-
-    return pd.concat(annotations_list, ignore_index=False).pipe(
-        make_clips, clip_length=clip_length, clip_stride=clip_stride
     )
 
 

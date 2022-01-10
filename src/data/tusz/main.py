@@ -47,14 +47,14 @@ def main(cfg: DictConfig):
 
         eeg_data = make_dataset(
             root_folder=raw_edf_folder / split,
+            output_folder=output_folder / split,
+            # Signals options
             clip_length=cfg.data.signals.clip_length,
             clip_stride=cfg.data.signals.clip_stride,
             label_map=OmegaConf.to_container(cfg.data.labels.map),
             binary=cfg.data.labels.binary,
             node_level=cfg.data.labels.node_level,
-            load_existing=cfg.data.load_existing,
             # Dataset options
-            clips_save_path=output_folder / split / "clips.parquet",
             sampling_rate=cfg.data.signals.sampling_rate,
             window_len=cfg.data.signals.window_len,
             diff_channels=cfg.data.signals.diff_channels,
