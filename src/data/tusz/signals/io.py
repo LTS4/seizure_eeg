@@ -1,7 +1,5 @@
 """I/O functions for EDF signals"""
 import re
-from functools import lru_cache
-from multiprocessing import Pool
 from pathlib import Path
 from typing import List, Tuple
 
@@ -32,7 +30,6 @@ def format_channel_names(names: List[str]) -> List[str]:
     ]
 
 
-# @lru_cache
 @check_types
 def read_eeg_signals(edf_path: Path) -> Tuple[DataFrame[SignalsDF], int]:
     """Get EEG signals and names from  edf file
@@ -83,7 +80,6 @@ def read_eeg_signals(edf_path: Path) -> Tuple[DataFrame[SignalsDF], int]:
     ref_rate = sampling_rates[0]
 
     # signals[ch_name] = edf_reader.readSignal(i)
-
     signals = pd.DataFrame(
         data=np.array([edf_reader.readSignal(i) for i in to_read]).T,
         columns=CHANNELS,

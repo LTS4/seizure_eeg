@@ -73,7 +73,7 @@ class EEGDataset(Dataset):
                 AnnotationDF.label,
                 AnnotationDF.start_time,
                 AnnotationDF.end_time,
-                AnnotationDF.edf_path,
+                AnnotationDF.signals_path,
             ]
         ]
 
