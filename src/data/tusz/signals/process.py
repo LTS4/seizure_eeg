@@ -1,12 +1,12 @@
 """Processing data from edf files"""
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import numpy as np
 import pandas as pd
 from pandera.typing import DataFrame, Index
 from scipy.signal import resample
 
-from src.data.schemas import SignalsDF
+from src.data.schemas import SignalsDF, SignalsDiffDF
 from src.data.tusz.constants import MONTAGES, SIGNAL_CHANNELS_FMT
 
 ################################################################################
@@ -58,7 +58,7 @@ def get_diff_signals_buggy(signals: DataFrame[SignalsDF], label_channels: Index[
     return pd.DataFrame((signals[lhs] - signals[rhs]).values, columns=label_channels)
 
 
-def get_diff_signals(signals: DataFrame[SignalsDF], label_channels: List[str]):
+def get_diff_signals(signals: DataFrame[SignalsDF], label_channels: List[str]) -> DataFrame[SignalsDiffDF]:
     """Take as input a signals dataframe and return the columm differences specified in
     *label_channels*"""
     loc_signals = pd.DataFrame(
@@ -77,12 +77,11 @@ def get_diff_signals(signals: DataFrame[SignalsDF], label_channels: List[str]):
 
 
 def process_signals(
-    signals: DataFrame,
+    signals: DataFrame[SignalsDF],
     sampling_rate_in: int,
     sampling_rate_out: int,
-    window_len: Optional[int] = -1,
     diff_channels: Optional[bool] = False,
-) -> np.ndarray:
+) -> DataFrame[Union[SignalsDF, SignalsDiffDF]]:
     """Process signals read from edf file.
 
     Processing steps:
@@ -107,14 +106,9 @@ def process_signals(
         signals = get_diff_signals(signals, MONTAGES)
 
     # 2. Resample signals
-    signals = resample_signals(signals, sampling_rate_in, sampling_rate_out)
-
-    # 3. Split windows
-    if window_len > 0:
-        signals = signals.reshape(
-            signals.shape[0] // window_len,  # nb of windows
-            window_len,  # nb of samples per window
-            signals.shape[1],  # nb of signals
-        )
+    signals = pd.DataFrame(
+        data=resample_signals(signals, sampling_rate_in, sampling_rate_out),
+        columns=signals.columns,
+    )
 
     return signals

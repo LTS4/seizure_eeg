@@ -1,5 +1,6 @@
 """I/O functions for EDF signals"""
 import re
+from functools import lru_cache
 from pathlib import Path
 from typing import List, Tuple
 
@@ -88,5 +89,6 @@ def read_eeg_signals(edf_path: Path) -> Tuple[DataFrame[SignalsDF], int]:
     return signals, ref_rate
 
 
-def read_signal(edf_reader: pyedflib.EdfReader, ch_idx: int):
-    return edf_reader.readSignal(ch_idx)
+@lru_cache(maxsize=50)
+def read_parquet(file_path):
+    return pd.read_parquet(file_path)

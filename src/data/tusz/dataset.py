@@ -12,6 +12,7 @@ from src.data.schemas import AnnotationDF
 from src.data.tusz.annotations.process import make_clips, process_annotations
 from src.data.tusz.io import list_all_edf_files, write_parquet
 from src.data.tusz.signals.io import read_eeg_signals
+from src.data.tusz.signals.process import process_signals
 
 ################################################################################
 # DATASET
@@ -21,6 +22,8 @@ def process_walk(
     root_folder: Path,
     *,
     signals_out_folder: Path,
+    sampling_rate_out: int,
+    diff_channels: bool,
     label_map: Dict[str, int],
     binary: bool,
     clip_length: int,
@@ -44,7 +47,15 @@ def process_walk(
         try:
             # Convert signals
             signals_path = (signals_out_folder / edf_path.stem).with_suffix(".parquet")
-            signals, sampling_rate = read_eeg_signals(edf_path)
+            signals, sr_in = read_eeg_signals(edf_path)
+
+            signals = process_signals(
+                signals=signals,
+                sampling_rate_in=sr_in,
+                sampling_rate_out=sampling_rate_out,
+                diff_channels=diff_channels,
+            )
+
             signals.to_parquet(signals_path)
 
             # Process annotations
@@ -54,7 +65,7 @@ def process_walk(
                     label_map=label_map,
                     binary=binary,
                     signals_path=signals_path,
-                    sampling_rate=sampling_rate,
+                    sampling_rate=sampling_rate_out,
                 )
             )
 
@@ -94,6 +105,8 @@ def make_dataset(
     clips_df = process_walk(
         root_folder,
         signals_out_folder=output_folder / "signals",
+        sampling_rate_out=sampling_rate,
+        diff_channels=diff_channels,
         label_map=label_map,
         binary=binary,
         clip_length=clip_length,
@@ -105,8 +118,6 @@ def make_dataset(
 
     return EEGDataset(
         clips_df,
-        sampling_rate=sampling_rate,
         window_len=window_len,
         node_level=node_level,
-        diff_channels=diff_channels,
     )

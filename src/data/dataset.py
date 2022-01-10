@@ -3,14 +3,14 @@ from typing import List, Optional, Tuple, Union
 
 import torch
 from pandas import IndexSlice as idx
+from pandas import read_parquet
 from pandera import check_types
 from pandera.typing import DataFrame
 from torch.utils.data import Dataset
 
 from src.data.schemas import AnnotationDF
 from src.data.tusz.constants import GLOBAL_CHANNEL
-from src.data.tusz.signals.io import read_eeg_signals
-from src.data.tusz.signals.process import process_signals
+from src.data.tusz.signals.io import read_parquet
 
 
 class EEGDataset(Dataset):
@@ -21,38 +21,25 @@ class EEGDataset(Dataset):
         self,
         clips_df: DataFrame[AnnotationDF],
         *,
-        sampling_rate: int,
         window_len: Optional[int] = -1,
         node_level: Optional[bool] = False,
-        diff_channels: Optional[bool] = True,
         device: Optional[str] = None,
     ) -> None:
         """Dataset of EEG clips with seizure labels
 
         Args:
             clips_df (DataFrame[AnnotationDF]): Pandas dataframe of EEG clips
-            sampling_rate (int): Samplking rate of EEG signals
             node_level (Optional[bool]): Wheter to get node-level or global labels
                 (only latter is currently supported)
-            diff_channels (Optional[bool], optional): Wether to retrieve differential signal or raw.
-                Defaults to True, i.e. differential.
             device (Optional[str], optional): Torch device. Defaults to None.
-
-        Raises:
-            ValueError: If node_level is true and diff_channels is false
         """
         super().__init__()
 
         self.clips_df = clips_df
 
-        if node_level and not diff_channels:
-            raise ValueError("Diff channels are compulsory when working ad node level")
-
-        self.diff_channels = diff_channels
         self.node_level(node_level)
 
         self.device = device
-        self.sampling_rate = sampling_rate
         self.window_len = window_len
 
     def node_level(self, node_level: bool):
@@ -73,24 +60,25 @@ class EEGDataset(Dataset):
                 AnnotationDF.label,
                 AnnotationDF.start_time,
                 AnnotationDF.end_time,
+                AnnotationDF.sampling_rate,
                 AnnotationDF.signals_path,
             ]
         ]
 
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        label, start_time, end_time, edf_path = self._get_from_df(index)
+        label, start_time, end_time, sr, signals_path = self._get_from_df(index)
 
-        signals, sr_in = read_eeg_signals(edf_path)
-        start_sample = int(start_time * sr_in)
-        end_sample = int(end_time * sr_in)
+        start_sample = int(start_time * sr)
+        end_sample = int(end_time * sr)
+        signals = read_parquet(signals_path).iloc[start_sample:end_sample].values
 
-        signals = process_signals(
-            signals=signals.iloc[start_sample:end_sample],
-            sampling_rate_in=sr_in,
-            sampling_rate_out=self.sampling_rate,
-            window_len=self.window_len,
-            diff_channels=self.diff_channels,
-        )
+        # 3. Split windows
+        if self.window_len > 0:
+            signals = signals.reshape(
+                signals.shape[0] // self.window_len,  # nb of windows
+                self.window_len,  # nb of samples per window
+                signals.shape[1],  # nb of signals
+            )
 
         return torch.tensor(signals, device=self.device), torch.tensor(label, device=self.device)
 
