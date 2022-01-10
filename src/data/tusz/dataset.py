@@ -37,21 +37,17 @@ def process_walk(
     elif not signals_out_folder.is_dir():
         raise ValueError(f"Target exists, but is not a directory ({signals_out_folder})")
 
-    file_list = list_all_edf_files(root_folder)
-
     nb_errors_skipped = 0
 
     annotations_list = []
 
-    for edf_path in tqdm(file_list, desc=f"{root_folder}"):
+    for edf_path in tqdm(list_all_edf_files(root_folder), desc=f"{root_folder}"):
         try:
             # Convert signals
             signals_path = (signals_out_folder / edf_path.stem).with_suffix(".parquet")
-            signals, sr_in = read_eeg_signals(edf_path)
 
             signals = process_signals(
-                signals=signals,
-                sampling_rate_in=sr_in,
+                *read_eeg_signals(edf_path),
                 sampling_rate_out=sampling_rate_out,
                 diff_channels=diff_channels,
             )

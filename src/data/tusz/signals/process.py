@@ -58,7 +58,9 @@ def get_diff_signals_buggy(signals: DataFrame[SignalsDF], label_channels: Index[
     return pd.DataFrame((signals[lhs] - signals[rhs]).values, columns=label_channels)
 
 
-def get_diff_signals(signals: DataFrame[SignalsDF], label_channels: List[str]) -> DataFrame[SignalsDiffDF]:
+def get_diff_signals(
+    signals: DataFrame[SignalsDF], label_channels: List[str]
+) -> DataFrame[SignalsDiffDF]:
     """Take as input a signals dataframe and return the columm differences specified in
     *label_channels*"""
     loc_signals = pd.DataFrame(

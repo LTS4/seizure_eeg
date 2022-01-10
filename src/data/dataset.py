@@ -3,7 +3,6 @@ from typing import List, Optional, Tuple, Union
 
 import torch
 from pandas import IndexSlice as idx
-from pandas import read_parquet
 from pandera import check_types
 from pandera.typing import DataFrame
 from torch.utils.data import Dataset
@@ -66,10 +65,10 @@ class EEGDataset(Dataset):
         ]
 
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        label, start_time, end_time, sr, signals_path = self._get_from_df(index)
+        label, start_time, end_time, s_rate, signals_path = self._get_from_df(index)
 
-        start_sample = int(start_time * sr)
-        end_sample = int(end_time * sr)
+        start_sample = int(start_time * s_rate)
+        end_sample = int(end_time * s_rate)
         signals = read_parquet(signals_path).iloc[start_sample:end_sample].values
 
         # 3. Split windows
