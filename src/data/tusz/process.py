@@ -7,7 +7,7 @@ import pandas as pd
 from pandera.typing import DataFrame
 from tqdm import tqdm
 
-from src.data.schemas import AnnotationDF
+from src.data.schemas import ClipsDF
 from src.data.tusz.annotations.process import make_clips, process_annotations
 from src.data.tusz.io import list_all_edf_files
 from src.data.tusz.signals.io import read_eeg_signals
@@ -27,7 +27,7 @@ def process_walk(
     binary: bool,
     clip_length: int,
     clip_stride: int,
-) -> DataFrame[AnnotationDF]:
+) -> DataFrame[ClipsDF]:
     """Precess every file in the root_folder tree"""
     logger = logging.getLogger(__name__)
 
@@ -66,7 +66,7 @@ def process_walk(
 
         except (IOError, AssertionError) as err:
             logger.info(
-                "Skipping file %s wich raises %s: \n\t%s", edf_path, type(err).__name__, err
+                "Excluding file %s wich raises %s: \n\t%s", edf_path, type(err).__name__, err
             )
             nb_errors_skipped += 1
 

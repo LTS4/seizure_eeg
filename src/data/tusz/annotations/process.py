@@ -18,21 +18,21 @@ import pandas as pd
 from pandera import check_types
 from pandera.typing import DataFrame, Index
 
-from src.data.schemas import AnnotationDF, LabelDF
+from src.data.schemas import ClipsDF, LabelDF
 from src.data.tusz.annotations.io import read_labels
 from src.data.tusz.utils import extract_session_date
 
 
-def get_channels(annotations: DataFrame[AnnotationDF]) -> Index[str]:
+def get_channels(annotations: DataFrame[ClipsDF]) -> Index[str]:
     return annotations.index.get_level_values("channel").unique()
 
 
 @check_types
 def make_clips(
-    annotations: DataFrame[AnnotationDF],
+    annotations: DataFrame[ClipsDF],
     clip_length: int,
     clip_stride: int,
-) -> DataFrame[AnnotationDF]:
+) -> DataFrame[ClipsDF]:
     "Split annotations dataframe in dataframe of clips"
     if clip_length < 0:
         return annotations.sort_index()
@@ -41,8 +41,8 @@ def make_clips(
     annotations = annotations.reset_index()
 
     start_times, end_times = (
-        annotations[AnnotationDF.start_time],
-        annotations[AnnotationDF.end_time],
+        annotations[ClipsDF.start_time],
+        annotations[ClipsDF.end_time],
     )
 
     out_list = []
@@ -52,7 +52,7 @@ def make_clips(
         bool_mask = (start_times <= clip_start) & (clip_end <= end_times)
 
         copy_vals = annotations[bool_mask].copy()
-        copy_vals[[AnnotationDF.segment, AnnotationDF.start_time, AnnotationDF.end_time]] = (
+        copy_vals[[ClipsDF.segment, ClipsDF.start_time, ClipsDF.end_time]] = (
             clip_idx,
             clip_start,
             clip_end,
@@ -67,23 +67,23 @@ def labels_to_annotations(
     edf_path: Path,
     signals_path: Path,
     sampling_rate: int,
-) -> DataFrame[AnnotationDF]:
+) -> DataFrame[ClipsDF]:
     """Add [patient, session, date, sampling_rate, signals_path] columns.
     patient, session, and date are extrapolated from edf_path"""
-    df[AnnotationDF.patient] = edf_path.parents[1].stem
-    df[AnnotationDF.session] = edf_path.stem
-    df[AnnotationDF.date] = extract_session_date(edf_path.parents[0].stem)
+    df[ClipsDF.patient] = edf_path.parents[1].stem
+    df[ClipsDF.session] = edf_path.stem
+    df[ClipsDF.date] = extract_session_date(edf_path.parents[0].stem)
 
-    df[AnnotationDF.sampling_rate] = sampling_rate
-    df[AnnotationDF.signals_path] = str(signals_path.absolute())
+    df[ClipsDF.sampling_rate] = sampling_rate
+    df[ClipsDF.signals_path] = str(signals_path.absolute())
     return df
 
 
 def map_labels(df: DataFrame, label_map: Dict[str, int]) -> DataFrame:
     """Map labels using dictioanry and convert column"""
     n_in = len(df)
-    df[AnnotationDF.label] = df[AnnotationDF.label].map(lambda x: label_map[x])
-    df = df.dropna().astype({AnnotationDF.label: int})
+    df[ClipsDF.label] = df[ClipsDF.label].map(lambda x: label_map[x])
+    df = df.dropna().astype({ClipsDF.label: int})
     logging.debug("Dropped %d entries with nan values", n_in)
 
     return df
@@ -97,7 +97,7 @@ def process_annotations(
     binary: bool,
     signals_path: Path,
     sampling_rate: int,
-) -> DataFrame[AnnotationDF]:
+) -> DataFrame[ClipsDF]:
     """Read annotations files associated to *edf_path* and add metadata
 
     Args:
@@ -116,10 +116,10 @@ def process_annotations(
         .pipe(map_labels, label_map=label_map)
         .set_index(
             [
-                AnnotationDF.patient,
-                AnnotationDF.session,
-                AnnotationDF.segment,
-                AnnotationDF.channel,
+                ClipsDF.patient,
+                ClipsDF.session,
+                ClipsDF.segment,
+                ClipsDF.channel,
             ]
         )
     )
@@ -128,23 +128,23 @@ def process_annotations(
 ####################################################################################################
 
 
-def time_to_samples(annotations: DataFrame[AnnotationDF], nb_samples) -> DataFrame[AnnotationDF]:
+def time_to_samples(annotations: DataFrame[ClipsDF], nb_samples) -> DataFrame[ClipsDF]:
     """Convert the start/end time columns of *annotations* to sample indices based on total
     ``nb_samples``"""
-    duration = annotations[AnnotationDF.end_time].max()
+    duration = annotations[ClipsDF.end_time].max()
 
     annotations["start_sample"] = np.floor(
-        annotations[AnnotationDF.start_time] / duration * nb_samples
+        annotations[ClipsDF.start_time] / duration * nb_samples
     ).astype(int)
     annotations["end_sample"] = np.ceil(
-        annotations[AnnotationDF.end_time] / duration * nb_samples
+        annotations[ClipsDF.end_time] / duration * nb_samples
     ).astype(int)
 
     return annotations
 
 
 def make_label_masks(
-    annotations: DataFrame[AnnotationDF],
+    annotations: DataFrame[ClipsDF],
     nb_samples: int,
     seiz_voc: Dict[str, int],
 ) -> DataFrame:
