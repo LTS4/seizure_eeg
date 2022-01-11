@@ -7,10 +7,9 @@ import pandas as pd
 from pandera.typing import DataFrame
 from tqdm import tqdm
 
-from src.data.dataset import EEGDataset
 from src.data.schemas import AnnotationDF
 from src.data.tusz.annotations.process import make_clips, process_annotations
-from src.data.tusz.io import list_all_edf_files, write_parquet
+from src.data.tusz.io import list_all_edf_files
 from src.data.tusz.signals.io import read_eeg_signals
 from src.data.tusz.signals.process import process_signals
 
@@ -79,41 +78,4 @@ def process_walk(
     # Make clips from annotations. Faster since in batch
     return pd.concat(annotations_list, ignore_index=False).pipe(
         make_clips, clip_length=clip_length, clip_stride=clip_stride
-    )
-
-
-def make_dataset(
-    root_folder: Path,
-    *,
-    output_folder: Path,
-    clip_length: int,
-    clip_stride: int,
-    label_map: Dict[str, str],
-    binary: bool,
-    sampling_rate: int,
-    window_len: int,
-    node_level: bool,
-    diff_channels: bool,
-) -> EEGDataset:
-    """Create eeg dataset by parsing all files in root_folder"""
-
-    logging.info("Creating clips dataframe from %s", root_folder)
-    clips_df = process_walk(
-        root_folder,
-        signals_out_folder=output_folder / "signals",
-        sampling_rate_out=sampling_rate,
-        diff_channels=diff_channels,
-        label_map=label_map,
-        binary=binary,
-        clip_length=clip_length,
-        clip_stride=clip_stride,
-    )
-
-    clips_save_path = output_folder / "clips.parquet"
-    write_parquet(clips_df, clips_save_path)
-
-    return EEGDataset(
-        clips_df,
-        window_len=window_len,
-        node_level=node_level,
     )
