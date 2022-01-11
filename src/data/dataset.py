@@ -46,7 +46,8 @@ class EEGDataset(Dataset):
         self._node_level = node_level
 
         if node_level:
-            self._clips_df = self.clips_df.drop(GLOBAL_CHANNEL).groupby(AnnotationDF.channel)
+            raise NotImplemented
+            # self._clips_df = self.clips_df.drop(GLOBAL_CHANNEL).groupby(AnnotationDF.channel)
         else:
             self._clips_df = self.clips_df.loc[idx[:, :, :, GLOBAL_CHANNEL]]
 
