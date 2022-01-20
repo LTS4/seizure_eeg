@@ -22,7 +22,7 @@ class LabelDF(pa.SchemaModel):
     end_time: Series[float]
 
 
-class AnnotationDF(pa.SchemaModel):
+class ClipsDF(pa.SchemaModel):
     """Dataframe for EEG annotations:
 
     ======= ======= ======= =======  ===== ========== ======== ==== ============= ============

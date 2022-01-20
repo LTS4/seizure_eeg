@@ -8,7 +8,7 @@ import pandas as pd
 from pandera import check_types
 from pandera.typing import DataFrame
 
-from src.data.schemas import AnnotationDF, LabelDF
+from src.data.schemas import ClipsDF, LabelDF
 from src.data.tusz.constants import (
     GLOBAL_CHANNEL,
     REGEX_LABEL,
@@ -139,10 +139,10 @@ def read_ref(doc_path: Path) -> DataFrame:
             file,
             sep=" ",
             names=[
-                AnnotationDF.session,
-                AnnotationDF.start_time,
-                AnnotationDF.end_time,
-                AnnotationDF.label,
+                ClipsDF.session,
+                ClipsDF.start_time,
+                ClipsDF.end_time,
+                ClipsDF.label,
                 "prob",
             ],
         )
@@ -161,9 +161,7 @@ def path_to_id_single(x):
 
 
 def path_to_id(df):
-    df[[AnnotationDF.patient, AnnotationDF.session]] = df[AnnotationDF.session].apply(
-        path_to_id_single
-    )
+    df[[ClipsDF.patient, ClipsDF.session]] = df[ClipsDF.session].apply(path_to_id_single)
     return df
 
 
@@ -178,7 +176,7 @@ def parse_calibration(df_slice):
         df_slice.iloc[3:]
         .pipe(
             rename_columns,
-            columns=[AnnotationDF.session, AnnotationDF.start_time, AnnotationDF.end_time],
+            columns=[ClipsDF.session, ClipsDF.start_time, ClipsDF.end_time],
         )
         .dropna()
         .reset_index(drop=True)

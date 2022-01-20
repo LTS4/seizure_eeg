@@ -63,15 +63,15 @@ def get_diff_signals(
 ) -> DataFrame[SignalsDiffDF]:
     """Take as input a signals dataframe and return the columm differences specified in
     *label_channels*"""
-    loc_signals = pd.DataFrame(
+    diff_signals = pd.DataFrame(
         np.empty((len(signals), len(label_channels))), columns=label_channels
     )
 
     for diff_label in label_channels:
         el1, el2 = diff_label.split("-")
-        loc_signals.loc[:, diff_label] = (signals[el1] - signals[el2]).values
+        diff_signals.loc[:, diff_label] = (signals[el1] - signals[el2]).values
 
-    return loc_signals
+    return diff_signals
 
 
 ####################################################################################################
