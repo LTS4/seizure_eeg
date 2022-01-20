@@ -46,25 +46,23 @@ def main(cfg: DictConfig):
         root_folder = raw_edf_folder / split
         signals_out_folder = output_folder / split / "signals"
 
-        logging.info("Creating clips dataframe from %s", root_folder)
-        clips_df = process_walk(
+        logging.info("Creating segments dataframe from %s", root_folder)
+        segments_df = process_walk(
             root_folder,
             signals_out_folder=signals_out_folder,
             sampling_rate_out=cfg.data.signals.sampling_rate,
             diff_channels=cfg.data.signals.diff_channels,
             label_map=OmegaConf.to_container(cfg.data.labels.map),
             binary=cfg.data.labels.binary,
-            clip_length=cfg.data.signals.clip_length,
-            clip_stride=cfg.data.signals.clip_stride,
         )
 
-        clips_save_path = output_folder / "clips.parquet"
-        write_parquet(clips_df, clips_save_path)
+        segments_save_path = output_folder / split / "segments.parquet"
+        write_parquet(segments_df, segments_save_path)
 
         logging.info(
             "Created %s dataset - # samples: %d",
             split.upper(),
-            len(clips_df.index.droplevel("channel").unique()),
+            len(segments_df.index.droplevel("channel").unique()),
         )
 
 
