@@ -23,14 +23,14 @@ def params_changed(params_path: Path, **kwargs) -> bool:
     If not, overwrite *params_path* with new params.
     """
     if params_path.exists():
-        with params_path.open("r", encoding="utf-8") as f:
-            old_params = yaml.safe_load(f)
+        with params_path.open("r", encoding="utf-8") as file:
+            old_params = yaml.safe_load(file)
 
         if kwargs == old_params:
             return False
 
-    with params_path.open("w", encoding="utf-8") as f:
-        yaml.safe_dump(kwargs, f)
+    with params_path.open("w", encoding="utf-8") as file:
+        yaml.safe_dump(kwargs, file)
     return True
 
 
