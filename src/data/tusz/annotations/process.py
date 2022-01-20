@@ -27,41 +27,6 @@ def get_channels(annotations: DataFrame[ClipsDF]) -> Index[str]:
     return annotations.index.get_level_values("channel").unique()
 
 
-@check_types
-def make_clips(
-    annotations: DataFrame[ClipsDF],
-    clip_length: int,
-    clip_stride: int,
-) -> DataFrame[ClipsDF]:
-    "Split annotations dataframe in dataframe of clips"
-    if clip_length < 0:
-        return annotations.sort_index()
-
-    index_names = annotations.index.names
-    annotations = annotations.reset_index()
-
-    start_times, end_times = (
-        annotations[ClipsDF.start_time],
-        annotations[ClipsDF.end_time],
-    )
-
-    out_list = []
-    for clip_idx, clip_start in enumerate(np.arange(0, end_times.max(), clip_stride)):
-        clip_end = clip_start + clip_length
-
-        bool_mask = (start_times <= clip_start) & (clip_end <= end_times)
-
-        copy_vals = annotations[bool_mask].copy()
-        copy_vals[[ClipsDF.segment, ClipsDF.start_time, ClipsDF.end_time]] = (
-            clip_idx,
-            clip_start,
-            clip_end,
-        )
-        out_list.append(copy_vals)
-
-    return pd.concat(out_list).set_index(index_names).sort_index()
-
-
 def labels_to_annotations(
     df: DataFrame[LabelDF],
     edf_path: Path,
