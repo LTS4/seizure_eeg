@@ -10,7 +10,7 @@ from pandera.typing import DataFrame
 from torch.utils.data import Dataset
 
 from src.data.schemas import ClipsDF
-from src.data.tusz.constants import GLOBAL_CHANNEL, MONTAGES
+from src.data.tusz.constants import CHANNELS, GLOBAL_CHANNEL, MONTAGES
 from src.data.tusz.signals.io import read_parquet
 from src.data.tusz.signals.process import get_diff_signals
 
@@ -62,6 +62,7 @@ class EEGDataset(Dataset):
         clip_stride: float,
         window_len: Optional[int] = -1,
         diff_channels: Optional[bool] = False,
+        fft_coeffs: Optional[Tuple[int, int]] = None,
         node_level: Optional[bool] = False,
         device: Optional[str] = None,
     ) -> None:
@@ -77,11 +78,13 @@ class EEGDataset(Dataset):
 
         self.clips_df = make_clips(segments_df, clip_length=clip_length, clip_stride=clip_stride)
 
+        self.window_len = window_len
+        self.diff_channels = diff_channels
+        self.fft_coeffs = fft_coeffs
+
         self.node_level(node_level)
 
         self.device = device
-        self.window_len = window_len
-        self.diff_channels = diff_channels
 
     def node_level(self, node_level: bool):
         """Setter for the node-level labels retrieval"""
@@ -112,27 +115,50 @@ class EEGDataset(Dataset):
 
         start_sample = int(start_time * s_rate)
         end_sample = int(end_time * s_rate)
-        signals = read_parquet(signals_path).iloc[start_sample:end_sample].values
+        signals = read_parquet(signals_path).iloc[start_sample:end_sample]
 
         # 1. (opt) Subtract pairwise columns
         if self.diff_channels:
-            signals = get_diff_signals(signals, MONTAGES)
+            signals = get_diff_signals(signals, MONTAGES).values
+        else:
+            signals = signals.values
 
-        # Split windows if asked
+        # 2. Convert to torch
+        signals = torch.tensor(signals, dtype=torch.float32, device=self.device)
+        label = torch.tensor(label, dtype=torch.long, device=self.device)
+
+        # 3. Split windows if asked
         if self.window_len > 0:
+            time_axis = 1
+
             signals = signals.reshape(
                 signals.shape[0] // self.window_len,  # nb of windows
-                self.window_len,  # nb of samples per window
+                self.window_len * s_rate,  # nb of samples per window (time axis)
                 signals.shape[1],  # nb of signals
             )
+        else:
+            time_axis = 0
 
-        return (
-            torch.tensor(signals, dtype=torch.float32, device=self.device),
-            torch.tensor(label, dtype=torch.long, device=self.device),
-        )
+        # 3. Compute fft
+        if self.fft_coeffs:
+            # Define slices to extract
+            extractor = len(signals.shape) * [slice(None)]
+            extractor[time_axis] = slice(*self.fft_coeffs)
+
+            # Actual fft
+            signals = torch.log(torch.abs(torch.fft.rfft(signals, axis=time_axis)))
+            signals = signals[extractor]
+
+        return signals, label
 
     def get_label_array(self):
         return self._clips_df[ClipsDF.label].values
+
+    def get_channels_names(self):
+        if self.diff_channels:
+            return MONTAGES
+        else:
+            return CHANNELS
 
     def __len__(self) -> int:
         return len(self._clips_df)
