@@ -10,8 +10,9 @@ from pandera.typing import DataFrame
 from torch.utils.data import Dataset
 
 from src.data.schemas import ClipsDF
-from src.data.tusz.constants import GLOBAL_CHANNEL
+from src.data.tusz.constants import CHANNELS, GLOBAL_CHANNEL, MONTAGES
 from src.data.tusz.signals.io import read_parquet
+from src.data.tusz.signals.process import get_diff_signals
 
 
 @check_types
@@ -60,6 +61,8 @@ class EEGDataset(Dataset):
         clip_length: float,
         clip_stride: float,
         window_len: Optional[int] = -1,
+        diff_channels: Optional[bool] = False,
+        fft_coeffs: Optional[Tuple[int, int]] = None,
         node_level: Optional[bool] = False,
         device: Optional[str] = None,
     ) -> None:
@@ -75,10 +78,18 @@ class EEGDataset(Dataset):
 
         self.clips_df = make_clips(segments_df, clip_length=clip_length, clip_stride=clip_stride)
 
+        self.window_len = window_len
+        self.diff_channels = diff_channels
+        self.fft_coeffs = fft_coeffs
+
         self.node_level(node_level)
 
         self.device = device
-        self.window_len = window_len
+
+        self.output_shape = self._get_output_shape()
+
+        # Compute signals mean
+        self.mean = self._compute_mean()
 
     def node_level(self, node_level: bool):
         """Setter for the node-level labels retrieval"""
@@ -109,23 +120,72 @@ class EEGDataset(Dataset):
 
         start_sample = int(start_time * s_rate)
         end_sample = int(end_time * s_rate)
-        signals = read_parquet(signals_path).iloc[start_sample:end_sample].values
+        signals = read_parquet(signals_path).iloc[start_sample:end_sample]
 
-        # 3. Split windows
+        # 1. (opt) Subtract pairwise columns
+        if self.diff_channels:
+            signals = get_diff_signals(signals, MONTAGES).values
+        else:
+            signals = signals.values
+
+        # 2. Convert to torch
+        signals = torch.tensor(signals, dtype=torch.float32, device=self.device)
+        label = torch.tensor(label, dtype=torch.long, device=self.device)
+
+        # 3. Optional: Split windows
         if self.window_len > 0:
+            time_axis = 1
+
             signals = signals.reshape(
                 signals.shape[0] // self.window_len,  # nb of windows
-                self.window_len,  # nb of samples per window
+                self.window_len * s_rate,  # nb of samples per window (time axis)
                 signals.shape[1],  # nb of signals
             )
+        else:
+            time_axis = 0
 
-        return (
-            torch.tensor(signals, dtype=torch.float32, device=self.device),
-            torch.tensor(label, dtype=torch.long, device=self.device),
-        )
+        # 3. Optional: Compute fft
+        if self.fft_coeffs:
+            # Define slices to extract
+            extractor = len(signals.shape) * [slice(None)]
+            extractor[time_axis] = slice(*self.fft_coeffs)
 
-    def get_label_array(self):
+            # Actual fft
+            signals = torch.log(torch.abs(torch.fft.rfft(signals, axis=time_axis)))
+            signals = signals[extractor]
+
+        # Center data. This is always performed, except for `get_mean`
+        if hasattr(self, "mean") and self.mean is not None:
+            signals -= self.mean
+
+        return signals, label
+
+    def get_label_array(self) -> np.ndarray:
         return self._clips_df[ClipsDF.label].values
+
+    def get_channels_names(self) -> List[str]:
+        if self.diff_channels:
+            return MONTAGES
+        else:
+            return CHANNELS
+
+    def _compute_mean(self) -> torch.Tensor:
+        """Compute mean of signals"""
+        self.mean = None
+        t_sum = torch.zeros(self.output_shape[0], dtype=torch.float64, device=self.device)
+        for X, _ in self:
+            t_sum += X
+
+        if self.window_len > 0:
+            raise NotImplementedError
+        else:
+            self.mean = torch.sum(t_sum, dim=0) / len(self) / self.output_shape[0][0]
+
+        return self.mean
+
+    def _get_output_shape(self) -> Tuple[torch.Size, torch.Size]:
+        X0, y0 = self.__getitem__(0)
+        return X0.shape, y0.shape
 
     def __len__(self) -> int:
         return len(self._clips_df)

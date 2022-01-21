@@ -1,5 +1,5 @@
 """Processing data from edf files"""
-from typing import List, Optional, Union
+from typing import List
 
 import numpy as np
 import pandas as pd
@@ -7,7 +7,7 @@ from pandera.typing import DataFrame, Index
 from scipy.signal import resample
 
 from src.data.schemas import SignalsDF, SignalsDiffDF
-from src.data.tusz.constants import MONTAGES, SIGNAL_CHANNELS_FMT
+from src.data.tusz.constants import SIGNAL_CHANNELS_FMT
 
 ################################################################################
 # RASAMPLING
@@ -78,36 +78,26 @@ def get_diff_signals(
 # PIPELINE
 
 
-def process_signals(
+def preprocess_signals(
     signals: DataFrame[SignalsDF],
     sampling_rate_in: int,
     sampling_rate_out: int,
-    diff_channels: Optional[bool] = False,
-) -> DataFrame[Union[SignalsDF, SignalsDiffDF]]:
-    """Process signals read from edf file.
+) -> DataFrame[SignalsDF]:
+    """Pre-process signals read from edf file.
 
     Processing steps:
-        1. (opt) Subtract pairwise columns
-        2. Resample signals
-        3. Split signals in windows
+        1. Resample signals
 
     Args:
         signals (DataFrame): Dataframe of signals of shape ``nb_samples x nb_channels``
         sampling_rate_in (int): Sampling rate as read from edf file
         sampling_rate_out (int): Desired sampling rate
-        diff_labels (Optional[Index[str]], optional): Labels defining which columns shall be
-            subtracted to generate final signals. Defaults to None, in which case the full EEG
-            dadaframe is returned.
 
     Returns:
         DataFrame: Processed signals
     """
 
-    # 1. (opt) Subtract pairwise columns
-    if diff_channels:
-        signals = get_diff_signals(signals, MONTAGES)
-
-    # 2. Resample signals
+    # 1. Resample signals
     signals = pd.DataFrame(
         data=resample_signals(signals, sampling_rate_in, sampling_rate_out),
         columns=signals.columns,
