@@ -10,8 +10,9 @@ from pandera.typing import DataFrame
 from torch.utils.data import Dataset
 
 from src.data.schemas import ClipsDF
-from src.data.tusz.constants import GLOBAL_CHANNEL
+from src.data.tusz.constants import GLOBAL_CHANNEL, MONTAGES
 from src.data.tusz.signals.io import read_parquet
+from src.data.tusz.signals.process import get_diff_signals
 
 
 @check_types
@@ -60,6 +61,7 @@ class EEGDataset(Dataset):
         clip_length: float,
         clip_stride: float,
         window_len: Optional[int] = -1,
+        diff_channels: Optional[bool] = False,
         node_level: Optional[bool] = False,
         device: Optional[str] = None,
     ) -> None:
@@ -79,6 +81,7 @@ class EEGDataset(Dataset):
 
         self.device = device
         self.window_len = window_len
+        self.diff_channels = diff_channels
 
     def node_level(self, node_level: bool):
         """Setter for the node-level labels retrieval"""
@@ -111,7 +114,11 @@ class EEGDataset(Dataset):
         end_sample = int(end_time * s_rate)
         signals = read_parquet(signals_path).iloc[start_sample:end_sample].values
 
-        # 3. Split windows
+        # 1. (opt) Subtract pairwise columns
+        if self.diff_channels:
+            signals = get_diff_signals(signals, MONTAGES)
+
+        # Split windows if asked
         if self.window_len > 0:
             signals = signals.reshape(
                 signals.shape[0] // self.window_len,  # nb of windows

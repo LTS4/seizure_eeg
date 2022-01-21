@@ -51,7 +51,6 @@ def main(cfg: DictConfig):
             root_folder,
             signals_out_folder=signals_out_folder,
             sampling_rate_out=cfg.data.signals.sampling_rate,
-            diff_channels=cfg.data.signals.diff_channels,
             label_map=OmegaConf.to_container(cfg.data.labels.map),
             binary=cfg.data.labels.binary,
         )

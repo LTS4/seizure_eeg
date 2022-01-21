@@ -12,7 +12,7 @@ from src.data.schemas import ClipsDF
 from src.data.tusz.annotations.process import process_annotations
 from src.data.tusz.io import list_all_edf_files
 from src.data.tusz.signals.io import read_eeg_signals
-from src.data.tusz.signals.process import process_signals
+from src.data.tusz.signals.process import preprocess_signals
 
 ################################################################################
 # DATASET
@@ -39,7 +39,6 @@ def process_walk(
     *,
     signals_out_folder: Path,
     sampling_rate_out: int,
-    diff_channels: bool,
     label_map: Dict[str, int],
     binary: bool,
 ) -> DataFrame[ClipsDF]:
@@ -58,7 +57,6 @@ def process_walk(
     reprocess = params_changed(
         signals_out_folder / "signals_params.yaml",
         sampling_rate_out=sampling_rate_out,
-        diff_channels=diff_channels,
     )
 
     for edf_path in tqdm(list_all_edf_files(root_folder), desc=f"{root_folder}"):
@@ -67,10 +65,9 @@ def process_walk(
 
             if not signals_path.exists() or reprocess:
                 # Process signals and save them
-                process_signals(
+                preprocess_signals(
                     *read_eeg_signals(edf_path),
                     sampling_rate_out=sampling_rate_out,
-                    diff_channels=diff_channels,
                 ).to_parquet(signals_path)
 
             # Process annotations
