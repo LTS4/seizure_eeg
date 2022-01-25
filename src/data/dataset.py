@@ -64,6 +64,8 @@ class EEGDataset(Dataset):
         diff_channels: Optional[bool] = False,
         fft_coeffs: Optional[Tuple[int, int]] = None,
         node_level: Optional[bool] = False,
+        mean: Optional[float] = None,
+        std: Optional[float] = None,
         device: Optional[str] = None,
     ) -> None:
         """Dataset of EEG clips with seizure labels
@@ -89,7 +91,16 @@ class EEGDataset(Dataset):
         self.output_shape = self._get_output_shape()
 
         # Compute signals mean
-        self.mean = self._compute_mean()
+        if mean is None:
+            if std is not None:
+                raise ValueError("You passed std but no mean")
+            self.mean = self._compute_mean()
+            self.std =
+        else:
+            if std is None:
+                raise ValueError("You passed mean but no std")
+            self.mean = mean
+            self.std = std
 
     def node_level(self, node_level: bool):
         """Setter for the node-level labels retrieval"""
@@ -170,7 +181,7 @@ class EEGDataset(Dataset):
             return CHANNELS
 
     def _compute_mean(self) -> torch.Tensor:
-        """Compute mean of signals"""
+        """Compute mean of signals and store result in ``self.mean``"""
         self.mean = None
         t_sum = torch.zeros(self.output_shape[0], dtype=torch.float64, device=self.device)
         for X, _ in self:
@@ -179,9 +190,29 @@ class EEGDataset(Dataset):
         if self.window_len > 0:
             raise NotImplementedError
         else:
-            self.mean = torch.sum(t_sum, dim=0) / len(self) / self.output_shape[0][0]
+            self.mean = torch.sum(t_sum, dim=0) / (len(self) * self.output_shape[0][0])
 
         return self.mean
+
+    def _compute_std(self) -> torch.Tensor:
+        """Compute std of signals and store result in ``self.std``
+
+        We must have already computed self.mean and __getitem__ shall return centered signals.
+        """
+        assert self.mean is not None
+
+        t_sum = torch.zeros(self.output_shape[0], dtype=torch.float64, device=self.device)
+        for X, _ in self:
+            t_sum += X ** 2
+
+        if self.window_len > 0:
+            raise NotImplementedError
+        else:
+            self.std = torch.sqrt(
+                torch.sum(t_sum, dim=0) / (len(self) * self.output_shape[0][0] - 1)
+            )
+
+        return self.std
 
     def _get_output_shape(self) -> Tuple[torch.Size, torch.Size]:
         X0, y0 = self.__getitem__(0)
