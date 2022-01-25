@@ -187,10 +187,7 @@ class EEGDataset(Dataset):
         for X, _ in self:
             t_sum += X
 
-        if self.window_len > 0:
-            raise NotImplementedError
-        else:
-            self.mean = torch.sum(t_sum, dim=0) / (len(self) * self.output_shape[0][0])
+        self.mean = torch.sum(t_sum) / (len(self) * np.prod(self.output_shape[0]))
 
         return self.mean
 
@@ -205,12 +202,7 @@ class EEGDataset(Dataset):
         for X, _ in self:
             t_sum += X ** 2
 
-        if self.window_len > 0:
-            raise NotImplementedError
-        else:
-            self.std = torch.sqrt(
-                torch.sum(t_sum, dim=0) / (len(self) * self.output_shape[0][0] - 1)
-            )
+        self.std = torch.sqrt(torch.sum(t_sum) / (len(self) * np.prod(self.output_shape[0]) - 1))
 
         return self.std
 
