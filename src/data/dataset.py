@@ -1,4 +1,5 @@
 """EEG Data class with common data retrieval"""
+import logging
 from typing import List, Optional, Set, Tuple, Union
 
 import numpy as np
@@ -78,6 +79,7 @@ class EEGDataset(Dataset):
         """
         super().__init__()
 
+        logging.info("Creating clips from segments")
         self.clips_df = make_clips(segments_df, clip_length=clip_length, clip_stride=clip_stride)
 
         self.window_len = window_len
@@ -94,10 +96,14 @@ class EEGDataset(Dataset):
         if mean is None:
             if std is not None:
                 raise ValueError("You passed std but no mean")
+
+            logging.info("Computing stats (mean and std)")
             self.mean, self.std = self._compute_stats()
         else:
             if std is None:
                 raise ValueError("You passed mean but no std")
+
+            logging.info("Using predefined (mean and std)")
             self.mean = mean
             self.std = std
 
