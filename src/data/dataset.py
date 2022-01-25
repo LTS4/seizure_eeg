@@ -64,8 +64,8 @@ class EEGDataset(Dataset):
         diff_channels: Optional[bool] = False,
         fft_coeffs: Optional[Tuple[int, int]] = None,
         node_level: Optional[bool] = False,
-        mean: Optional[float] = None,
-        std: Optional[float] = None,
+        mean: Optional[torch.Tensor] = None,
+        std: Optional[torch.Tensor] = None,
         device: Optional[str] = None,
     ) -> None:
         """Dataset of EEG clips with seizure labels
