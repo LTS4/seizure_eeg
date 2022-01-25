@@ -195,9 +195,9 @@ class EEGDataset(Dataset):
         self.mean = None
         self.std = None
 
-        if len(self) > 10000:
+        if len(self) > 5000:
             rng = default_rng()
-            samples = rng.choice(len(self), size=10000, replace=False, shuffle=False)
+            samples = rng.choice(len(self), size=5000, replace=False, shuffle=False)
             samples.sort()  # We sort the samples to open their files in order, if possible
         else:
             samples = np.arange(len(self))
