@@ -165,9 +165,13 @@ class EEGDataset(Dataset):
             signals = torch.log(torch.abs(torch.fft.rfft(signals, axis=time_axis)))
             signals = signals[extractor]
 
-        # Center data. This is always performed, except for `get_mean`
+        # Center data. This is always performed, except for `_compute_mean`
         if hasattr(self, "mean") and self.mean is not None:
             signals -= self.mean
+
+            # Normalize data. This is always performed, except for `_compute_std`
+            if hasattr(self, "std") and self.std is not None:
+                signals /= self.std
 
         return signals, label
 
@@ -197,6 +201,7 @@ class EEGDataset(Dataset):
         We must have already computed self.mean and __getitem__ shall return centered signals.
         """
         assert self.mean is not None
+        self.std = None
 
         t_sum = torch.zeros(self.output_shape[0], dtype=torch.float64, device=self.device)
         for X, _ in self:
