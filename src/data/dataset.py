@@ -1,9 +1,11 @@
 """EEG Data class with common data retrieval"""
+import logging
 from typing import List, Optional, Set, Tuple, Union
 
 import numpy as np
 import pandas as pd
 import torch
+from numpy.random import default_rng
 from pandas import IndexSlice as idx
 from pandera import check_types
 from pandera.typing import DataFrame
@@ -64,6 +66,8 @@ class EEGDataset(Dataset):
         diff_channels: Optional[bool] = False,
         fft_coeffs: Optional[Tuple[int, int]] = None,
         node_level: Optional[bool] = False,
+        mean: Optional[torch.Tensor] = None,
+        std: Optional[torch.Tensor] = None,
         device: Optional[str] = None,
     ) -> None:
         """Dataset of EEG clips with seizure labels
@@ -76,6 +80,7 @@ class EEGDataset(Dataset):
         """
         super().__init__()
 
+        logging.info("Creating clips from segments")
         self.clips_df = make_clips(segments_df, clip_length=clip_length, clip_stride=clip_stride)
 
         self.window_len = window_len
@@ -89,7 +94,19 @@ class EEGDataset(Dataset):
         self.output_shape = self._get_output_shape()
 
         # Compute signals mean
-        self.mean = self._compute_mean()
+        if mean is None:
+            if std is not None:
+                raise ValueError("You passed std but no mean")
+
+            logging.info("Computing stats (mean and std)")
+            self.mean, self.std = self._compute_stats()
+        else:
+            if std is None:
+                raise ValueError("You passed mean but no std")
+
+            logging.info("Using predefined (mean and std)")
+            self.mean = mean
+            self.std = std
 
     def node_level(self, node_level: bool):
         """Setter for the node-level labels retrieval"""
@@ -154,9 +171,13 @@ class EEGDataset(Dataset):
             signals = torch.log(torch.abs(torch.fft.rfft(signals, axis=time_axis)))
             signals = signals[extractor]
 
-        # Center data. This is always performed, except for `get_mean`
+        # Center data. This is always performed, except for `_compute_mean`
         if hasattr(self, "mean") and self.mean is not None:
             signals -= self.mean
+
+            # Normalize data. This is always performed, except for `_compute_std`
+            if hasattr(self, "std") and self.std is not None:
+                signals /= self.std
 
         return signals, label
 
@@ -169,19 +190,31 @@ class EEGDataset(Dataset):
         else:
             return CHANNELS
 
-    def _compute_mean(self) -> torch.Tensor:
-        """Compute mean of signals"""
+    def _compute_stats(self) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Compute mean and std of signals and store result in ``self.(mean|std)``"""
         self.mean = None
-        t_sum = torch.zeros(self.output_shape[0], dtype=torch.float64, device=self.device)
-        for X, _ in self:
-            t_sum += X
+        self.std = None
 
-        if self.window_len > 0:
-            raise NotImplementedError
+        if len(self) > 5000:
+            rng = default_rng()
+            samples = rng.choice(len(self), size=5000, replace=False, shuffle=False)
+            samples.sort()  # We sort the samples to open their files in order, if possible
         else:
-            self.mean = torch.sum(t_sum, dim=0) / len(self) / self.output_shape[0][0]
+            samples = np.arange(len(self))
 
-        return self.mean
+        t_sum = torch.zeros(self.output_shape[0], dtype=torch.float64, device=self.device)
+        t_sum_sq = torch.zeros_like(t_sum)
+        for i in samples:
+            X, _ = self[i]
+            t_sum += X
+            t_sum_sq += X ** 2
+
+        N = len(samples) * np.prod(self.output_shape[0])
+        self.mean = torch.sum(t_sum) / N
+        # Compute std with Bessel's correction
+        self.std = torch.sqrt((torch.sum(t_sum_sq) - N * self.mean ** 2) / (N - 1))
+
+        return self.mean, self.std
 
     def _get_output_shape(self) -> Tuple[torch.Size, torch.Size]:
         X0, y0 = self.__getitem__(0)
@@ -191,7 +224,9 @@ class EEGDataset(Dataset):
         return len(self._clips_df)
 
 
-def _patient_split(segments_df: DataFrame[ClipsDF], ratio_min: float, ratio_max: float) -> Set[str]:
+def _patient_split(
+    segments_df: DataFrame[ClipsDF], ratio_min: float, ratio_max: float, rng: np.random.Generator
+) -> Set[str]:
     """Compute a set of patients from segments_df indices such that they represent between ratio min
     and max of each label appearences.
 
@@ -203,6 +238,7 @@ def _patient_split(segments_df: DataFrame[ClipsDF], ratio_min: float, ratio_max:
         segments_df (DataFrame[ClipsDF]): Dataframe of EEG segments
         ratio_min (float): Minimum fraction of labels to cover
         ratio_max (float): Maximum fraction of labels to cover
+        rng (np.random.Generator): Random number generator
 
     Raises:
         ValueError: If ratio_[min|max] do not satisfy ``0 < ratio_min <= ratio_max < 1``
@@ -242,7 +278,7 @@ def _patient_split(segments_df: DataFrame[ClipsDF], ratio_min: float, ratio_max:
             assert to_choose, "No patients satisfy split, retry"
 
             # Randomly pick a candidate
-            candidate = np.random.choice(to_choose)
+            candidate = rng.choice(to_choose)
 
             to_choose.remove(candidate)
             p_selection.add(candidate)
@@ -259,7 +295,9 @@ def _patient_split(segments_df: DataFrame[ClipsDF], ratio_min: float, ratio_max:
     return selected
 
 
-def patient_split(segments_df: DataFrame[ClipsDF], ratio_min: float, ratio_max: float) -> Set[str]:
+def patient_split(
+    segments_df: DataFrame[ClipsDF], ratio_min: float, ratio_max: float, seed: Optional[int] = None
+) -> Set[str]:
     """Compute a set of patients from segments_df indices such that they represent between ratio min
     and max of each label appearences.
 
@@ -281,9 +319,11 @@ def patient_split(segments_df: DataFrame[ClipsDF], ratio_min: float, ratio_max: 
     Returns:
         Set[str]: Set of selected patients
     """
+    rng = default_rng(seed)
+
     for _ in range(10):
         try:
-            selected = _patient_split(segments_df, ratio_min, ratio_max)
+            selected = _patient_split(segments_df, ratio_min, ratio_max, rng=rng)
             break
         except AssertionError:
             continue
