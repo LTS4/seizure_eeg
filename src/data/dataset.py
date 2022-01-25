@@ -95,7 +95,7 @@ class EEGDataset(Dataset):
             if std is not None:
                 raise ValueError("You passed std but no mean")
             self.mean = self._compute_mean()
-            self.std =
+            self.std = self._compute_std()
         else:
             if std is None:
                 raise ValueError("You passed mean but no std")
