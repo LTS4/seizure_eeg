@@ -94,8 +94,7 @@ class EEGDataset(Dataset):
         if mean is None:
             if std is not None:
                 raise ValueError("You passed std but no mean")
-            self.mean = self._compute_mean()
-            self.std = self._compute_std()
+            self.mean, self.std = self._compute_stats()
         else:
             if std is None:
                 raise ValueError("You passed mean but no std")
@@ -184,32 +183,23 @@ class EEGDataset(Dataset):
         else:
             return CHANNELS
 
-    def _compute_mean(self) -> torch.Tensor:
-        """Compute mean of signals and store result in ``self.mean``"""
+    def _compute_stats(self) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Compute mean and std of signals and store result in ``self.(mean|std)``"""
         self.mean = None
-        t_sum = torch.zeros(self.output_shape[0], dtype=torch.float64, device=self.device)
-        for X, _ in self:
-            t_sum += X
-
-        self.mean = torch.sum(t_sum) / (len(self) * np.prod(self.output_shape[0]))
-
-        return self.mean
-
-    def _compute_std(self) -> torch.Tensor:
-        """Compute std of signals and store result in ``self.std``
-
-        We must have already computed self.mean and __getitem__ shall return centered signals.
-        """
-        assert self.mean is not None
         self.std = None
 
         t_sum = torch.zeros(self.output_shape[0], dtype=torch.float64, device=self.device)
+        t_sum_sq = torch.zeros_like(t_sum)
         for X, _ in self:
-            t_sum += X ** 2
+            t_sum += X
+            t_sum_sq += X ** 2
 
-        self.std = torch.sqrt(torch.sum(t_sum) / (len(self) * np.prod(self.output_shape[0]) - 1))
+        N = len(self) * np.prod(self.output_shape[0])
+        self.mean = torch.sum(t_sum) / N
+        # Compute std with Bessel's correction
+        self.std = torch.sqrt((torch.sum(t_sum_sq) - N * self.mean ** 2) / (N - 1))
 
-        return self.std
+        return self.mean, self.std
 
     def _get_output_shape(self) -> Tuple[torch.Size, torch.Size]:
         X0, y0 = self.__getitem__(0)
