@@ -223,7 +223,9 @@ class EEGDataset(Dataset):
         return len(self._clips_df)
 
 
-def _patient_split(segments_df: DataFrame[ClipsDF], ratio_min: float, ratio_max: float) -> Set[str]:
+def _patient_split(
+    segments_df: DataFrame[ClipsDF], ratio_min: float, ratio_max: float, rng: np.random.Generator
+) -> Set[str]:
     """Compute a set of patients from segments_df indices such that they represent between ratio min
     and max of each label appearences.
 
@@ -235,6 +237,7 @@ def _patient_split(segments_df: DataFrame[ClipsDF], ratio_min: float, ratio_max:
         segments_df (DataFrame[ClipsDF]): Dataframe of EEG segments
         ratio_min (float): Minimum fraction of labels to cover
         ratio_max (float): Maximum fraction of labels to cover
+        rng (np.random.Generator): Random number generator
 
     Raises:
         ValueError: If ratio_[min|max] do not satisfy ``0 < ratio_min <= ratio_max < 1``
@@ -274,7 +277,7 @@ def _patient_split(segments_df: DataFrame[ClipsDF], ratio_min: float, ratio_max:
             assert to_choose, "No patients satisfy split, retry"
 
             # Randomly pick a candidate
-            candidate = np.random.choice(to_choose)
+            candidate = rng.choice(to_choose)
 
             to_choose.remove(candidate)
             p_selection.add(candidate)
@@ -291,7 +294,9 @@ def _patient_split(segments_df: DataFrame[ClipsDF], ratio_min: float, ratio_max:
     return selected
 
 
-def patient_split(segments_df: DataFrame[ClipsDF], ratio_min: float, ratio_max: float) -> Set[str]:
+def patient_split(
+    segments_df: DataFrame[ClipsDF], ratio_min: float, ratio_max: float, seed: Optional[int] = None
+) -> Set[str]:
     """Compute a set of patients from segments_df indices such that they represent between ratio min
     and max of each label appearences.
 
@@ -313,9 +318,11 @@ def patient_split(segments_df: DataFrame[ClipsDF], ratio_min: float, ratio_max: 
     Returns:
         Set[str]: Set of selected patients
     """
+    rng = default_rng(seed)
+
     for _ in range(10):
         try:
-            selected = _patient_split(segments_df, ratio_min, ratio_max)
+            selected = _patient_split(segments_df, ratio_min, ratio_max, rng=rng)
             break
         except AssertionError:
             continue
