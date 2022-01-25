@@ -5,6 +5,7 @@ from typing import List, Optional, Set, Tuple, Union
 import numpy as np
 import pandas as pd
 import torch
+from numpy.random import default_rng
 from pandas import IndexSlice as idx
 from pandera import check_types
 from pandera.typing import DataFrame
@@ -194,13 +195,20 @@ class EEGDataset(Dataset):
         self.mean = None
         self.std = None
 
+        if len(self) > 10000:
+            rng = default_rng()
+            samples = rng.choice(len(self), size=10000, replace=False)
+        else:
+            samples = np.arange(len(self))
+
         t_sum = torch.zeros(self.output_shape[0], dtype=torch.float64, device=self.device)
         t_sum_sq = torch.zeros_like(t_sum)
-        for X, _ in self:
+        for i in samples:
+            X, _ = self[i]
             t_sum += X
             t_sum_sq += X ** 2
 
-        N = len(self) * np.prod(self.output_shape[0])
+        N = len(samples) * np.prod(self.output_shape[0])
         self.mean = torch.sum(t_sum) / N
         # Compute std with Bessel's correction
         self.std = torch.sqrt((torch.sum(t_sum_sq) - N * self.mean ** 2) / (N - 1))
