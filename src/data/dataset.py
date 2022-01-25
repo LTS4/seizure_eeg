@@ -259,7 +259,7 @@ def _patient_split(segments_df: DataFrame[ClipsDF], ratio_min: float, ratio_max:
     return selected
 
 
-def patient_split(segments_df: DataFrame[ClipsDF], ratio_min: float, ratio_max: float):
+def patient_split(segments_df: DataFrame[ClipsDF], ratio_min: float, ratio_max: float) -> Set[str]:
     """Compute a set of patients from segments_df indices such that they represent between ratio min
     and max of each label appearences.
 
