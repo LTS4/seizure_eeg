@@ -1,5 +1,5 @@
 """EEG Data class with common data retrieval"""
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Set, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -189,3 +189,105 @@ class EEGDataset(Dataset):
 
     def __len__(self) -> int:
         return len(self._clips_df)
+
+
+def _patient_split(segments_df: DataFrame[ClipsDF], ratio_min: float, ratio_max: float) -> Set[str]:
+    """Compute a set of patients from segments_df indices such that they represent between ratio min
+    and max of each label appearences.
+
+    Patients are randomly sampled to satisy the constraint on each label iteratively. In some cases,
+    previous selections make it impossible to satisfy the constraint by adding any patient. In that
+    case it should be enough to rerun the split procedure.
+
+    Args:
+        segments_df (DataFrame[ClipsDF]): Dataframe of EEG segments
+        ratio_min (float): Minimum fraction of labels to cover
+        ratio_max (float): Maximum fraction of labels to cover
+
+    Raises:
+        ValueError: If ratio_[min|max] do not satisfy ``0 < ratio_min <= ratio_max < 1``
+        AssertionError: If the sampling algorithm fails,
+            I.e. it runs out of patients before getting to ratio_min or any patient added surpass
+            ratio_max
+
+    Returns:
+        Set[str]: Set of selected patients
+    """
+    if not 0 < ratio_min <= ratio_max < 1:
+        raise ValueError("ratio_[min|max] must satisfy ``0 < ratio_min <= ratio_max < 1``")
+
+    labels_by_patient = segments_df.groupby("patient")["label"]
+    label_counts = labels_by_patient.value_counts().rename("counts").reset_index(level="label")
+
+    label_counts["counts"] /= label_counts["label"].map(
+        label_counts.groupby("label")["counts"].sum()
+    )
+
+    # Start with empty selction and no seen patients
+    selected = set()
+    seen = set()
+
+    # Start by filing up small classes as they have fewer choices
+    for label in segments_df["label"].value_counts().sort_values().index:
+        # Only look at counts of this instance
+        filtered = label_counts[label_counts["label"] == label]
+
+        # We can already have a partial selection
+        p_selection = selected & set(filtered.index)
+        # Choose from patients representing this class, not already selected and unseen
+        to_choose = list(set(filtered.index) - selected - seen)
+
+        # We add elements until we get the desired ratio
+        while filtered.loc[p_selection, "counts"].sum() <= ratio_min:
+            assert to_choose, "No patients satisfy split, retry"
+
+            # Randomly pick a candidate
+            candidate = np.random.choice(to_choose)
+
+            to_choose.remove(candidate)
+            p_selection.add(candidate)
+            seen.add(candidate)
+
+            # If we pass the theshold the candidate is invalid
+            if filtered.loc[p_selection, "counts"].sum() > ratio_max:
+                p_selection.discard(candidate)
+
+        selected = selected.union(p_selection)
+
+        seen = seen.union(to_choose)
+
+    return selected
+
+
+def patient_split(segments_df: DataFrame[ClipsDF], ratio_min: float, ratio_max: float):
+    """Compute a set of patients from segments_df indices such that they represent between ratio min
+    and max of each label appearences.
+
+    Patients are randomly sampled to satisy the constraint on each label iteratively. In some cases,
+    previous selections make it impossible to satisfy the constraint by adding any patient. This
+    functions tries ten different random splits before failing. In that case, with high probability
+    no split exists.
+
+    Args:
+        segments_df (DataFrame[ClipsDF]): Dataframe of EEG segments
+        ratio_min (float): Minimum fraction of labels to cover
+        ratio_max (float): Maximum fraction of labels to cover
+
+    Raises:
+        ValueError: If ratio_[min|max] do not satisfy ``0 < ratio_min <= ratio_max < 1``
+        ValueError: If the sampling algorithm fails 10 times, which probably means that
+            ratio_[min|max] are too restrictive
+
+    Returns:
+        Set[str]: Set of selected patients
+    """
+    for _ in range(10):
+        try:
+            selected = _patient_split(segments_df, ratio_min, ratio_max)
+            break
+        except AssertionError:
+            continue
+    else:
+        raise ValueError("Impossible to create a valid split with given ratio")
+
+    return selected
