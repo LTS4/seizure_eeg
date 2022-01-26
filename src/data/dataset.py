@@ -195,12 +195,14 @@ class EEGDataset(Dataset):
         self.mean = None
         self.std = None
 
-        if False and len(self) > 5000:
-            rng = default_rng()
-            samples = rng.choice(len(self), size=5000, replace=False, shuffle=False)
-            samples.sort()  # We sort the samples to open their files in order, if possible
-        else:
-            samples = np.arange(len(self))
+        # This part is commented for reproducibility, consider reimplementing it if performances are
+        # too slow
+        # if len(self) > 5000:
+        #     rng = default_rng()
+        #     samples = rng.choice(len(self), size=5000, replace=False, shuffle=False)
+        #     samples.sort()  # We sort the samples to open their files in order, if possible
+        # else:
+        samples = np.arange(len(self))
 
         t_sum = torch.zeros(self.output_shape[0], dtype=torch.float64, device=self.device)
         t_sum_sq = torch.zeros_like(t_sum)
