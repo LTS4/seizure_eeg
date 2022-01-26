@@ -272,6 +272,8 @@ def _patient_split(
         p_selection = selected & set(filtered.index)
         # Choose from patients representing this class, not already selected and unseen
         to_choose = list(set(filtered.index) - selected - seen)
+        # We need to sort patients for reproducibility as sets have non-deterministic ordering.
+        to_choose.sort()
 
         # We add elements until we get the desired ratio
         while filtered.loc[p_selection, "counts"].sum() <= ratio_min:
@@ -279,7 +281,6 @@ def _patient_split(
 
             # Randomly pick a candidate
             candidate = rng.choice(to_choose)
-
             to_choose.remove(candidate)
             p_selection.add(candidate)
             seen.add(candidate)
@@ -292,6 +293,8 @@ def _patient_split(
 
         seen = seen.union(to_choose)
 
+    ratios = label_counts.loc[selected].groupby("label").sum()
+    logging.info("Splitted with ratios %s", ratios.to_dict())
     return selected
 
 
