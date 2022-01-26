@@ -1,6 +1,6 @@
 """EEG Data class with common data retrieval"""
 import logging
-from typing import List, Optional, Set, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -195,7 +195,7 @@ class EEGDataset(Dataset):
         self.mean = None
         self.std = None
 
-        if len(self) > 5000:
+        if False and len(self) > 5000:
             rng = default_rng()
             samples = rng.choice(len(self), size=5000, replace=False, shuffle=False)
             samples.sort()  # We sort the samples to open their files in order, if possible
@@ -226,7 +226,7 @@ class EEGDataset(Dataset):
 
 def _patient_split(
     segments_df: DataFrame[ClipsDF], ratio_min: float, ratio_max: float, rng: np.random.Generator
-) -> Set[str]:
+) -> List[str]:
     """Compute a set of patients from segments_df indices such that they represent between ratio min
     and max of each label appearences.
 
@@ -247,7 +247,7 @@ def _patient_split(
             ratio_max
 
     Returns:
-        Set[str]: Set of selected patients
+        List[str]: List of selected patients
     """
     if not 0 < ratio_min <= ratio_max < 1:
         raise ValueError("ratio_[min|max] must satisfy ``0 < ratio_min <= ratio_max < 1``")
@@ -272,6 +272,8 @@ def _patient_split(
         p_selection = selected & set(filtered.index)
         # Choose from patients representing this class, not already selected and unseen
         to_choose = list(set(filtered.index) - selected - seen)
+        # We need to sort patients for reproducibility as sets have non-deterministic ordering.
+        to_choose.sort()
 
         # We add elements until we get the desired ratio
         while filtered.loc[p_selection, "counts"].sum() <= ratio_min:
@@ -279,7 +281,6 @@ def _patient_split(
 
             # Randomly pick a candidate
             candidate = rng.choice(to_choose)
-
             to_choose.remove(candidate)
             p_selection.add(candidate)
             seen.add(candidate)
@@ -292,12 +293,18 @@ def _patient_split(
 
         seen = seen.union(to_choose)
 
+    # Sort the list for reproducibility
+    selected = list(selected)
+    selected.sort()
+
+    ratios = label_counts.loc[selected].groupby("label").sum()
+    logging.info("Splitted with ratios %s", ratios.to_dict())
     return selected
 
 
 def patient_split(
     segments_df: DataFrame[ClipsDF], ratio_min: float, ratio_max: float, seed: Optional[int] = None
-) -> Set[str]:
+) -> List[str]:
     """Compute a set of patients from segments_df indices such that they represent between ratio min
     and max of each label appearences.
 
@@ -317,7 +324,7 @@ def patient_split(
             ratio_[min|max] are too restrictive
 
     Returns:
-        Set[str]: Set of selected patients
+        List[str]: List of selected patients
     """
     rng = default_rng(seed)
 
