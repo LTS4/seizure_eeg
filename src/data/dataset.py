@@ -168,7 +168,7 @@ class EEGDataset(Dataset):
             extractor[time_axis] = slice(*self.fft_coeffs)
 
             # Actual fft
-            signals = torch.log(torch.abs(torch.fft.rfft(signals, axis=time_axis)))
+            signals = torch.abs(torch.fft.rfft(signals, axis=time_axis))
             signals = signals[extractor]
 
         # Center data. This is always performed, except for `_compute_mean`
