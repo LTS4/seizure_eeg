@@ -271,7 +271,7 @@ def _patient_split(
         filtered = label_counts[label_counts["label"] == label]
 
         # We can already have a partial selection
-        p_selection = selected & set(filtered.index)
+        p_selection = list(selected & set(filtered.index))
         # Choose from patients representing this class, not already selected and unseen
         to_choose = list(set(filtered.index) - selected - seen)
         # We need to sort patients for reproducibility as sets have non-deterministic ordering.
@@ -283,13 +283,13 @@ def _patient_split(
 
             # Randomly pick a candidate
             candidate = rng.choice(to_choose)
-            to_choose.remove(candidate)
-            p_selection.add(candidate)
             seen.add(candidate)
+            to_choose.remove(candidate)
+            p_selection.append(candidate)
 
             # If we pass the theshold the candidate is invalid
             if filtered.loc[p_selection, "counts"].sum() > ratio_max:
-                p_selection.discard(candidate)
+                p_selection.remove(candidate)
 
         selected = selected.union(p_selection)
 
