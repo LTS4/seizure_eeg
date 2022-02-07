@@ -21,7 +21,7 @@ from src.data.tusz.signals.process import get_diff_signals
 def make_clips(
     annotations: DataFrame[ClipsDF],
     clip_length: int,
-    clip_stride: int,
+    clip_stride: Union[int, float, str],
 ) -> DataFrame[ClipsDF]:
     "Split annotations dataframe in dataframe of clips"
     if clip_length < 0:
@@ -35,21 +35,33 @@ def make_clips(
         annotations[ClipsDF.end_time],
     )
 
-    out_list = []
-    for clip_idx, clip_start in enumerate(np.arange(0, end_times.max(), clip_stride)):
-        clip_end = clip_start + clip_length
+    if isinstance(clip_stride, (int, float)):
+        out_list = []
+        for clip_idx, clip_start in enumerate(np.arange(0, end_times.max(), clip_stride)):
+            clip_end = clip_start + clip_length
 
-        bool_mask = (start_times <= clip_start) & (clip_end <= end_times)
+            bool_mask = (start_times <= clip_start) & (clip_end <= end_times)
 
-        copy_vals = annotations[bool_mask].copy()
-        copy_vals[[ClipsDF.segment, ClipsDF.start_time, ClipsDF.end_time]] = (
-            clip_idx,
-            clip_start,
-            clip_end,
-        )
-        out_list.append(copy_vals)
+            copy_vals = annotations[bool_mask].copy()
+            copy_vals[[ClipsDF.segment, ClipsDF.start_time, ClipsDF.end_time]] = (
+                clip_idx,
+                clip_start,
+                clip_end,
+            )
+            out_list.append(copy_vals)
 
-    return pd.concat(out_list).set_index(index_names).sort_index()
+        clips = pd.concat(out_list)
+    elif clip_stride == "start":
+        clips = annotations.copy()
+        clips[ClipsDF.end_time] = start_times + clip_length  # Clips end after given lenght
+
+        # We only keep clips which fall completely in a segment
+        # TODO: Consider wether changing this
+        clips = clips.loc[clips[ClipsDF.end_time] <= end_times]
+    else:
+        raise NotImplementedError(f"Invalid clip_stride, got {clip_stride}")
+
+    return clips.set_index(index_names).sort_index()
 
 
 class EEGDataset(Dataset):
