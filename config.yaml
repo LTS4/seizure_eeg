@@ -1,0 +1,69 @@
+################################################################################
+# DATA CONFIG ##################################################################
+
+raw_path: "data/raw"
+processed_path: "data/processed"
+
+tusz:
+  version: "v1.5.2"
+
+  source: "tuh_eeg_seizure/${data.tusz.version}/"
+  force_download: false
+
+  raw: "${data.raw_path}/TUSZ/${data.tusz.version}"
+  raw_edf: "${data.tusz.raw}/edf"
+  raw_doc: "${data.tusz.raw}/_DOCS"
+
+  processed: "${data.processed_path}/TUSZ/"
+
+  splits:
+    - dev
+    - train
+
+  excluded_patients_dev:
+    - "00001027"
+    - "00001981"
+    - "00004671"
+    - "00006546"
+    - "00009842"
+  excluded_patients_train: []
+
+labels:
+  map:
+    bckg: 0 # Background
+
+    # SEIZURE LABEL - BINARY
+    seiz: 1
+
+    # COMBINED FOCAL
+    spsz: 1 # Simple Partial Seizure
+    cpsz: 1 # Complex Partial Seizure
+    fnsz: 1 # Focal Non-Specific Seizure
+
+    # COMBINED TONIC
+    tnsz: 2 # Tonic Seizure
+    cnsz: 2 # Clonic Seizure
+    tcsz: 2 # Tonic Clonic Seizure
+
+    # GENERALIZED NON-SPECIFIC
+    gnsz: 3 # Generalized Non-Specific Seizure
+
+    # Absence Seizure
+    absz: 4 # Absence Seizure
+
+    # EXCLUDED
+    mysz: null # Myoclonic Seizure
+
+  binary: false
+
+signals:
+  diff_channels: false
+  sampling_rate: 250 # Hz
+  clip_length: 12 # seconds
+  clip_stride: ${.clip_length} # seconds or string
+  window_len: 2 # seconds
+
+  # Interval [min, max] - include all with [null] or switch off with null
+  fft_coeffs: [100, 400]
+
+  node_level: false
