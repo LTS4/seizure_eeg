@@ -182,10 +182,11 @@ class EEGDataset(Dataset):
         # 3. Optional: Split windows
         if self.window_len > 0:
             time_axis = 1
+            win_len = self.window_len * s_rate
 
             signals = signals.reshape(
-                signals.shape[0] // self.window_len,  # nb of windows
-                self.window_len * s_rate,  # nb of samples per window (time axis)
+                signals.shape[0] // win_len,  # nb of windows
+                win_len,  # nb of samples per window (time axis)
                 signals.shape[1],  # nb of signals
             )
         else:
