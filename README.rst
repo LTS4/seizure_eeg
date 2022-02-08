@@ -28,24 +28,53 @@ This package provides the following functionalities:
    - Data loading
    - Data transforms
 
-Parameters can be set in the ``data_config.yaml`` file, or passed as cli
-arguments.
+The first two steps are handled by ``seiz_eeg.preprocess``, whose parameters can
+be set in the ``data_config.yaml`` file, or passed as cli arguments.
+
+The creation of clips and the Pytorch Dataset are implemented in
+``seiz_eeg.dataset``.
 
 Download and pre-processing
 --------------------------------------------------------------------------------
 
+Data are downloaded to a subfolder of ``raw_path``, declared in the
+source-specific configuration.
+Then, with functions which are tailored to different datasets, we pretreat the
+the data to give them a source agnostic structure.
 
-.. figure:: docs/figures/processing.png
-   :alt: Schema of preprocessing pipeline
-   :figwidth: 80 %
+Segments dataframe
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+EEG measurements come with little structure. To perform any data-driven task, we
+shall identify relevant information and organize them.
+This is generally provided in annotations files, which are separate for each
+EEG scan. By preliminary reading all of such files, we can create a tabular
+*annotation dataframe*, where entries are indexed by patient, session,
+segment, and channel. The following image shows a sample of such
+a table for the training split of the TUH Seizure corpus. Thanks to this added
+structure, it is easy to define *clips of interest* and quickly retrieve the
+relevant signals file, which can be read and processed.
+
+.. image:: docs/figures/segments-df.png
+   :alt: Sample of an annotation dataframe
+   :width: 100 %
    :align: center
 
-   Usual pre-processing of EEG signals. We read raw signals from a ``.edf`` file
-   and resample them to the desired rate. Then we extract the clip of interest,
-   e.g. the first seconds of a seizure, and we optionally split it in windows.
-   Those can then be further transformed or fed to a model. Since many clips can
-   be extracted out of the same file, it is convenient to save them and avoid
-   repeating expensive operations.
+
+EEG signals
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+.. image:: docs/figures/processing.png
+   :alt: Schema of preprocessing pipeline
+   :width: 100 %
+   :align: center
+
+Usual pre-processing of EEG signals. We read raw signals from a ``.edf`` file
+and resample them to the desired rate. Then we extract the clip of interest,
+e.g. the first seconds of a seizure, and we optionally split it in windows.
+Those can then be further transformed or fed to a model. Since many clips can be
+extracted out of the same file, it is convenient to save them and avoid
+repeating expensive operations.
 
 Datasets
 ================================================================================
