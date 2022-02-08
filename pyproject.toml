@@ -1,0 +1,62 @@
+[build-system]
+requires = ['setuptools', 'wheel']
+build-backend = 'setuptools.build_meta:__legacy__'
+
+#-------------------------------------------------------------------------------
+#--- Pylint --------------------------------------------------------------------
+
+[tool.pylint.master]
+docstring-min-length = 5
+
+[tool.pylint.format]
+max-line-length = 100
+
+[tool.pylint.basic]
+good-names = [
+    'f',
+    'N',
+    'i',
+    'j',
+    'k',
+    'df',
+    'x',
+    'X',
+    'y',
+    'x0',
+    'X0',
+    'y0',
+    'ex',
+    'lr',
+    'Run',
+    '_',
+]
+
+[tool.pylint.typecheck]
+# List of members which are set dynamically and missed by Pylint inference
+# system, and so shouldn't trigger E1101 when accessed.
+generated-members = ['numpy.*', 'torch.*']
+
+[tool.pylint.design]
+max-attributes = 10
+max-args = 8
+
+[tool.pylint.message_control]
+disable = [
+    'no-else-break',
+    'no-else-continue',
+    'no-else-raise',
+    'no-else-return',
+]
+
+#-------------------------------------------------------------------------------
+#--- Format --------------------------------------------------------------------
+
+[tool.black]
+line-length = 100
+target-version = ['py39']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = 'black'
+multi_line_output = 3
+extend_skip_glob = ['env/*']

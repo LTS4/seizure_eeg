@@ -27,4 +27,14 @@ setup(
         "Topic :: Scientific/Engineering :: Medical Science Apps.",
     ],
     python_requires=">=3.9",
+    install_requires=[
+        "numpy",
+        "pandas",
+        "pandera",
+        "pyEDFlib==0.1.19",
+        "scipy",
+        "omegaconf",
+        "pexpect",
+        "tqdm",
+    ],
 )
