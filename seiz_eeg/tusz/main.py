@@ -58,4 +58,7 @@ def main(cfg: DataConf):
 
 
 if __name__ == "__main__":
-    main(OmegaConf.load("config.yaml"))
+    config = OmegaConf.load("data_config.yaml")
+    config.merge_with_cli()
+
+    main(config)
