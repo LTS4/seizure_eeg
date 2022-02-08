@@ -30,6 +30,10 @@ This package provides the following functionalities:
 
 The first two steps are handled by ``seiz_eeg.preprocess``, whose parameters can
 be set in the ``data_config.yaml`` file, or passed as cli arguments.
+A ``dataset`` must be specified with the corresponding option, either in the
+``.yaml`` file, or as follows::
+
+    python -m seiz_eeg.preprocess dataset=tusz
 
 The creation of clips and the Pytorch Dataset are implemented in
 ``seiz_eeg.dataset``.
@@ -93,7 +97,7 @@ the command line as follows:
 
 .. code-block:: sh
 
-    python -m seiz_eeg.tusz.main tusz.password=$PASSWORD
+    python -m seiz_eeg.preprocess dataset=tusz tusz.password=$PASSWORD
 
 If you get a ``"Permission denied, please try again."`` message it is probably
 because your password is wrong.
