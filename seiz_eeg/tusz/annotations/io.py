@@ -8,14 +8,14 @@ import pandas as pd
 from pandera import check_types
 from pandera.typing import DataFrame
 
-from src.data.schemas import ClipsDF, LabelDF
-from src.data.tusz.constants import (
+from seiz_eeg.schemas import ClipsDF, LabelDF
+from seiz_eeg.tusz.constants import (
     GLOBAL_CHANNEL,
     REGEX_LABEL,
     REGEX_MONTAGE,
     REGEX_SYMBOLS,
 )
-from src.data.tusz.utils import check_label, concat_labels
+from seiz_eeg.tusz.utils import check_label, concat_labels
 
 
 @check_types

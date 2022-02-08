@@ -10,8 +10,8 @@ import pyedflib
 from pandera import check_types
 from pandera.typing import DataFrame
 
-from src.data.schemas import SignalsDF
-from src.data.tusz.constants import CHANNELS, REGEX_SIGNAL_CHANNELS
+from seiz_eeg.schemas import SignalsDF
+from seiz_eeg.tusz.constants import CHANNELS, REGEX_SIGNAL_CHANNELS
 
 
 def fix_channel_name(name: str) -> str:

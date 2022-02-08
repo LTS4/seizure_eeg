@@ -7,7 +7,7 @@ from typing import List, Optional
 import pandas as pd
 from pandera.typing import DataFrame
 
-from src.data.tusz.utils import lower_na
+from seiz_eeg.tusz.utils import lower_na
 
 logger = logging.getLogger(__name__)
 

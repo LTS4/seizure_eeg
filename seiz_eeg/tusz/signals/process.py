@@ -6,8 +6,8 @@ import pandas as pd
 from pandera.typing import DataFrame, Index
 from scipy.signal import resample
 
-from src.data.schemas import SignalsDF, SignalsDiffDF
-from src.data.tusz.constants import SIGNAL_CHANNELS_FMT
+from seiz_eeg.schemas import SignalsDF, SignalsDiffDF
+from seiz_eeg.tusz.constants import SIGNAL_CHANNELS_FMT
 
 ################################################################################
 # RASAMPLING

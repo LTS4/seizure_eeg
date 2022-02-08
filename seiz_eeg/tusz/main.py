@@ -8,9 +8,9 @@ from dotenv import find_dotenv, load_dotenv
 from omegaconf import OmegaConf
 
 from src.config import Config
-from src.data.tusz.download import download
-from src.data.tusz.io import write_parquet
-from src.data.tusz.process import process_walk
+from seiz_eeg.tusz.download import download
+from seiz_eeg.tusz.io import write_parquet
+from seiz_eeg.tusz.process import process_walk
 from src.run import run
 
 ################################################################################

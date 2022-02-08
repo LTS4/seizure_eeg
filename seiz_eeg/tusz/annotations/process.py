@@ -18,9 +18,9 @@ import pandas as pd
 from pandera import check_types
 from pandera.typing import DataFrame, Index
 
-from src.data.schemas import ClipsDF, LabelDF
-from src.data.tusz.annotations.io import read_labels
-from src.data.tusz.utils import extract_session_date
+from seiz_eeg.schemas import ClipsDF, LabelDF
+from seiz_eeg.tusz.annotations.io import read_labels
+from seiz_eeg.tusz.utils import extract_session_date
 
 
 def get_channels(annotations: DataFrame[ClipsDF]) -> Index[str]:

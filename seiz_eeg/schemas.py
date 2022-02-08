@@ -2,7 +2,7 @@
 import pandera as pa
 from pandera.typing import DateTime, Index, Series
 
-from src.data.tusz.constants import CHANNELS, MONTAGES
+from seiz_eeg.tusz.constants import CHANNELS, MONTAGES
 
 
 class LabelDF(pa.SchemaModel):

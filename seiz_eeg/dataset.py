@@ -11,10 +11,10 @@ from pandera import check_types
 from pandera.typing import DataFrame
 from torch.utils.data import Dataset
 
-from src.data.schemas import ClipsDF
-from src.data.tusz.constants import CHANNELS, GLOBAL_CHANNEL, MONTAGES
-from src.data.tusz.signals.io import read_parquet
-from src.data.tusz.signals.process import get_diff_signals
+from seiz_eeg.schemas import ClipsDF
+from seiz_eeg.tusz.constants import CHANNELS, GLOBAL_CHANNEL, MONTAGES
+from seiz_eeg.tusz.signals.io import read_parquet
+from seiz_eeg.tusz.signals.process import get_diff_signals
 
 
 @check_types
@@ -240,12 +240,12 @@ class EEGDataset(Dataset):
         for i in samples:
             X, _ = self[i]
             t_sum += X
-            t_sum_sq += X ** 2
+            t_sum_sq += X**2
 
         N = len(samples) * np.prod(self.output_shape[0])
         self.mean = torch.sum(t_sum) / N
         # Compute std with Bessel's correction
-        self.std = torch.sqrt((torch.sum(t_sum_sq) - N * self.mean ** 2) / (N - 1))
+        self.std = torch.sqrt((torch.sum(t_sum_sq) - N * self.mean**2) / (N - 1))
 
         return self.mean, self.std
 
