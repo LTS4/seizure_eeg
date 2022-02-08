@@ -1,10 +1,30 @@
 from setuptools import find_packages, setup
 
+with open("README.md", "r", encoding="utf-8") as fh:
+    long_description = fh.read()
+
 setup(
-    name="src",
+    name="seiz_eeg",
     packages=find_packages(),
     version="0.1.0",
-    description="Analysis and development of methods for seizure detection and prediction",
+    description="Data loading and preprocessing of EEG scans for seizure-related ML tasks",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     author="William Cappelletti",
+    author_email="william.cappelletti@epfl.ch",
     license="BSD-3",
+    url="https://github.com/WilliamCappelletti/seizure_eeg",
+    project_urls={
+        "Bug Tracker": "https://github.com/WilliamCappelletti/seizure_eeg/issues",
+    },
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "Development Status :: 3 - Alpha",
+        "License :: OSI Approved :: BSD License",
+        "Operating System :: OS Independent",
+        "Natural Language :: English",
+        "Topic :: Scientific/Engineering :: Artificial Intelligence",
+        "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    ],
+    python_requires=">=3.9",
 )
