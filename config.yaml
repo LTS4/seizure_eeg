@@ -7,14 +7,15 @@ processed_path: "data/processed"
 tusz:
   version: "v1.5.2"
 
-  source: "tuh_eeg_seizure/${data.tusz.version}/"
+  source: "tuh_eeg_seizure/${.version}/"
+  password: ???
   force_download: false
 
-  raw: "${data.raw_path}/TUSZ/${data.tusz.version}"
-  raw_edf: "${data.tusz.raw}/edf"
-  raw_doc: "${data.tusz.raw}/_DOCS"
+  raw: "${raw_path}/TUSZ/${.version}"
+  raw_edf: "${.raw}/edf"
+  raw_doc: "${.raw}/_DOCS"
 
-  processed: "${data.processed_path}/TUSZ/"
+  processed: "${processed_path}/TUSZ/"
 
   splits:
     - dev

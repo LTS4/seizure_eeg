@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 """Main module for dataset creation"""
 import logging
-import os
 from pathlib import Path
 
-from dotenv import find_dotenv, load_dotenv
 from omegaconf import OmegaConf
 
 from seiz_eeg.config import DataConf
@@ -20,8 +18,6 @@ def main(cfg: DataConf):
     """Runs data processing scripts to turn raw data from (../raw) into
     cleaned data ready to be analyzed (saved in ../processed).
     """
-    load_dotenv(find_dotenv())
-
     raw_edf_folder = Path(cfg.tusz.raw_edf)
     output_folder = Path(cfg.tusz.processed)
 
@@ -33,7 +29,7 @@ def main(cfg: DataConf):
         download(
             source=cfg.tusz.source,
             target=cfg.tusz.raw,
-            password=os.environ["NEDC_PASSWORD"],
+            password=cfg.tusz.password,
         )
 
     for split in cfg.tusz.splits:
@@ -62,5 +58,4 @@ def main(cfg: DataConf):
 
 
 if __name__ == "__main__":
-    # pylint: disable=no-value-for-parameter
-    main()
+    main(OmegaConf.load("config.yaml"))
