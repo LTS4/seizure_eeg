@@ -20,10 +20,25 @@ from src.data.tusz.signals.process import get_diff_signals
 @check_types
 def make_clips(
     annotations: DataFrame[ClipsDF],
-    clip_length: int,
-    clip_stride: int,
+    clip_length: Union[int, float],
+    clip_stride: Union[int, float, str],
 ) -> DataFrame[ClipsDF]:
-    "Split annotations dataframe in dataframe of clips"
+    """Split annotations dataframe in dataframe of clips
+
+    Args:
+        annotations (DataFrame[ClipsDF]): Dataframe containing seizure annotations
+        clip_length (Union[int, float]): Lenght of the output clips, in same unit as ``start_time``
+            and ``end_time`` of *annotations*. Negative value to
+        clip_stride (Union[int, float, str]): Stride to extract the start times of the clips.
+            Integer or real values give explicit stride. If string, must be one of the following:
+                - "start": extract one clip per segment, starting at onset/termination label.
+
+    Raises:
+        ValueError: If ``clip_lenght`` is negative, or an invalid string
+
+    Returns:
+        DataFrame[ClipsDF]: Clips dataframe
+    """
     if clip_length < 0:
         return annotations.sort_index()
 
@@ -35,21 +50,36 @@ def make_clips(
         annotations[ClipsDF.end_time],
     )
 
-    out_list = []
-    for clip_idx, clip_start in enumerate(np.arange(0, end_times.max(), clip_stride)):
-        clip_end = clip_start + clip_length
+    if isinstance(clip_stride, (int, float)):
+        if clip_stride < 0:
+            raise ValueError(f"Clip stride must be postive, got {clip_stride}")
 
-        bool_mask = (start_times <= clip_start) & (clip_end <= end_times)
+        out_list = []
+        for clip_idx, clip_start in enumerate(np.arange(0, end_times.max(), clip_stride)):
+            clip_end = clip_start + clip_length
 
-        copy_vals = annotations[bool_mask].copy()
-        copy_vals[[ClipsDF.segment, ClipsDF.start_time, ClipsDF.end_time]] = (
-            clip_idx,
-            clip_start,
-            clip_end,
-        )
-        out_list.append(copy_vals)
+            bool_mask = (start_times <= clip_start) & (clip_end <= end_times)
 
-    return pd.concat(out_list).set_index(index_names).sort_index()
+            copy_vals = annotations[bool_mask].copy()
+            copy_vals[[ClipsDF.segment, ClipsDF.start_time, ClipsDF.end_time]] = (
+                clip_idx,
+                clip_start,
+                clip_end,
+            )
+            out_list.append(copy_vals)
+
+        clips = pd.concat(out_list)
+    elif clip_stride == "start":
+        clips = annotations.copy()
+        clips[ClipsDF.end_time] = start_times + clip_length  # Clips end after given lenght
+
+        # We only keep clips which fall completely in a segment
+        # TODO: Consider wether changing this
+        clips = clips.loc[clips[ClipsDF.end_time] <= end_times]
+    else:
+        raise ValueError(f"Invalid clip_stride, got {clip_stride}")
+
+    return clips.set_index(index_names).sort_index()
 
 
 class EEGDataset(Dataset):
