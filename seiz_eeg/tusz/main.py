@@ -23,7 +23,7 @@ def main(cfg: DataConf):
 
     # Download data if missing folders
     if cfg.tusz.force_download or (
-        not set(cfg.tusz.splits) <= {x.stem for x in raw_edf_folder.iterdir()}
+        not set(cfg.tusz.subsets) <= {x.stem for x in raw_edf_folder.iterdir()}
     ):
         logging.info("Downloading data")
         download(
@@ -32,7 +32,7 @@ def main(cfg: DataConf):
             password=cfg.tusz.password,
         )
 
-    for split in cfg.tusz.splits:
+    for split in cfg.tusz.subsets:
         logging.info("Creating %s dataset", split.upper())
 
         root_folder = raw_edf_folder / split

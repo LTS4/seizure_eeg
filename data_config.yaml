@@ -18,17 +18,18 @@ tusz:
 
   processed: "${processed_path}/TUSZ/"
 
-  splits:
+  subsets:
     - dev
     - train
 
-  excluded_patients_dev:
-    - "00001027"
-    - "00001981"
-    - "00004671"
-    - "00006546"
-    - "00009842"
-  excluded_patients_train: []
+  excluded_patients:
+    dev:
+      - "00001027"
+      - "00001981"
+      - "00004671"
+      - "00006546"
+      - "00009842"
+    train: []
 
 labels:
   map:

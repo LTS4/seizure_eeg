@@ -91,7 +91,7 @@ class EEGDataset(Dataset):
         segments_df: DataFrame[ClipsDF],
         *,
         clip_length: float,
-        clip_stride: float,
+        clip_stride: Union[int, float, str],
         window_len: Optional[int] = -1,
         diff_channels: Optional[bool] = False,
         fft_coeffs: Optional[Tuple[int, int]] = None,
@@ -343,7 +343,7 @@ def patient_split(
 
     Patients are randomly sampled to satisy the constraint on each label iteratively. In some cases,
     previous selections make it impossible to satisfy the constraint by adding any patient. This
-    functions tries ten different random splits before failing. In that case, with high probability
+    functions tries ten different random subsets before failing. In that case, with high probability
     no split exists.
 
     Args:

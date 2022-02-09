@@ -33,10 +33,12 @@ be set in the ``data_config.yaml`` file, or passed as cli arguments.
 A ``dataset`` must be specified with the corresponding option, either in the
 ``.yaml`` file, or as follows::
 
-    python -m seiz_eeg.preprocess dataset=tusz
+    python -m seiz_eeg.preprocess dataset=DATASET
 
 The creation of clips and the Pytorch Dataset are implemented in
 ``seiz_eeg.dataset``.
+
+More details on parameters in the `Parameters`_ section.
 
 Download and pre-processing
 --------------------------------------------------------------------------------
@@ -68,17 +70,17 @@ relevant signals file, which can be read and processed.
 EEG signals
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
+In the usual pre-processing of EEG signals we read raw signals from a ``.edf`` file
+and resample them to the desired rate. Then we extract one clip of interest,
+e.g. the first seconds of a seizure, and we optionally split it in windows.
+Those can then be further transformed or fed to a model. Since many clips can be
+extracted out of the same file, it is convenient to save the resampled signal
+and avoid repeating expensive operations.
+
 .. image:: docs/figures/processing.png
    :alt: Schema of preprocessing pipeline
    :width: 100 %
    :align: center
-
-Usual pre-processing of EEG signals. We read raw signals from a ``.edf`` file
-and resample them to the desired rate. Then we extract the clip of interest,
-e.g. the first seconds of a seizure, and we optionally split it in windows.
-Those can then be further transformed or fed to a model. Since many clips can be
-extracted out of the same file, it is convenient to save them and avoid
-repeating expensive operations.
 
 Datasets
 ================================================================================
@@ -108,6 +110,24 @@ Corpus website`_.
 .. _`TUH EEG Corpus website`:
     https://isip.piconepress.com/projects/tuh_eeg/html/downloads.shtml
 
+Parameters
+================================================================================
+
+Many parameters are available for data processing and they shall provided as
+*configuration* dataclasses (specified in ``seiz_eeg.config.py``) to our functions.
+
+We use OmegaConf_ to merge ``.yaml`` files configuration and cli options in our
+runnable script (``seiz_eeg.preprocess``), and we recommend to use the same
+approach for user-defined code.
+
+An example of configuration file for TUH Seizure corpus is provided in |data_config|_.
+These options can be loaded by running ``OmegaConf.load("data_config.yaml")``,
+which returns a ``DictConfig`` which is compatible with our dataclasses.
+
+.. _OmegaConf: https://omegaconf.readthedocs.io/en/latest/
+
+.. |data_config| replace:: ``data_config.yaml``
+.. _data_config: https://github.com/WilliamCappelletti/seizure_eeg/blob/main/data_config.yaml
 
 Code structure
 ================================================================================
