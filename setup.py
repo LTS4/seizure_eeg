@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-with open("README.md", "r", encoding="utf-8") as fh:
+with open("README.rst", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
@@ -9,7 +9,7 @@ setup(
     version="0.1.0",
     description="Data loading and preprocessing of EEG scans for seizure-related ML tasks",
     long_description=long_description,
-    long_description_content_type="text/markdown",
+    long_description_content_type="text/x-rst",
     author="William Cappelletti",
     author_email="william.cappelletti@epfl.ch",
     license="BSD-3",
