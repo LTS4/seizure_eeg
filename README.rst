@@ -15,6 +15,20 @@ numpy_, scipy_, and pytorch_.
 .. _pytorch: https://pytorch.org/
 .. _scipy: https://scipy.org/
 
+Installation
+================================================================================
+
+The code can be pip-installed directly from git, if you have proper
+authentication. Just run::
+
+    pip install git+ssh://git@github.com/WilliamCappelletti/seizure_eeg.git
+
+Otherwise, you can clone the repository and pip install it::
+
+    git clone git@github.com:WilliamCappelletti/seizure_eeg.git
+    cd seizure_eeg
+    pip install seizure_eeg
+
 How to use
 ================================================================================
 
