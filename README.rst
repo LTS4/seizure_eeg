@@ -124,6 +124,50 @@ An example of configuration file for TUH Seizure corpus is provided in |data_con
 These options can be loaded by running ``OmegaConf.load("data_config.yaml")``,
 which returns a ``DictConfig`` which is compatible with our dataclasses.
 
+The config file and the dataclasses should provide the following parameters:
+
+.. code-block::
+
+    data_config (DataConf)
+    │
+    ├── dataset (str):                              Abbrv. of dataset to preprocess. Currently supported:
+    │                                                   - tusz: TUH Seizure Corpus
+    │
+    ├── raw_path (str):                             Root folder for raw data (downloads)
+    │
+    ├── processed_path (str):                       Root folder for preprocessed data
+    │
+    ├── labels (DataLabelsConf):                    Seizure labels specifications
+    │   ├── map (Dict[str, int]):                       Map from string seizure codes to integers, e.g. ``bkgd -> 0`` and ``fnsz -> 1``
+    │   │
+    │   └── binary (bool):                              Wheter to read binary labels
+    │
+    ├── signals (DataSignalsConf):                  Options for signals and clips processing
+    │   ├── diff_channels (bool):                       Wheter to compute channels diffrerences, e.g. "T3-T5", "P4-O2", etc.
+    │   ├── sampling_rate (int):                        Desired sampling rate, in Hz
+    │   ├── clip_length (float):                        Lenght of clips to extract, in seconds
+    │   ├── clip_stride (Union[int, float, str]):       Stride to extract the start times of the clips.
+    │   │                                               Integer or real values give explicit stride, in seconds.
+    │   │                                               If string, must be one of the following:
+    │   │                                                   - "start": extract one clip per segment, starting at onset/termination label.
+    │   │
+    │   ├── window_len (float):                         Lenght of windows to split the clip in in seconds.
+    │   │                                               If negative no windowing is performed.
+    │   │
+    │   ├── fft_coeffs (Optional[List[Optional[int]]]): FFT coefficient interval: *[min_index, max_index]*.
+    │   │                                               Include all with ``[None]`` or switch off FFT with ``None``.
+    │   │
+    │   └── node_level (bool):                          Wheter to work with node-level or global labels
+    │
+    └── tusz (DataSourceConf):                      Dataset parameters for TUH Seizure Corpus
+        ├── version (str):                              Dataset version
+        ├── force_download (bool):                      Download data even if they are already present
+        ├── raw (str):                                  Path where to save raw data
+        ├── processed (str):                            Path where to save preprocessed data
+        ├── subsets (List[str]):                        List of subsets to include in preprocessing (e.g. ``["train", "test"]``)
+        └── excluded_patients (Dict[str, List[str]]):   Map from subset to list of patients to exclude from it.
+
+
 .. _OmegaConf: https://omegaconf.readthedocs.io/en/latest/
 
 .. |data_config| replace:: ``data_config.yaml``
