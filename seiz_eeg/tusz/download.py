@@ -1,6 +1,5 @@
 """Download data from TUH server with rsync"""
 import sys
-from pathlib import Path
 
 import pexpect
 
@@ -44,12 +43,18 @@ def authenticate(child: pexpect.spawn, password: str):
         authenticate(child, password)
 
 
-def download(source: Path, target: Path, password: str):
-    """Download data from `source` to `target`"""
+def download(version: str, target: str, password: str):
+    """Download TUH seizure data
+
+    Args:
+        version (str): Seizure corpus version (e.g. "v1.5.2")
+        target (str): Folder where to download data
+        password (str): nedc password
+    """
     while True:
         # spawn rsync
         child = pexpect.spawn(
-            f"rsync -auxvL nedc@www.isip.piconepress.com:data/{source} {target}",
+            f"rsync -auxvL nedc@www.isip.piconepress.com:data/eeg/tuh_eeg_seizure/{version}/ {target}",
             encoding="utf-8",
         )
         child.logfile_read = sys.stdout

@@ -27,7 +27,7 @@ def main(cfg: DataConf):
     ):
         logging.info("Downloading data")
         download(
-            source=cfg.tusz.source,
+            version=cfg.tusz.version,
             target=cfg.tusz.raw,
             password=cfg.tusz.password,
         )

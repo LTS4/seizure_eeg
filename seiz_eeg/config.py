@@ -11,7 +11,6 @@ from typing import Dict, List, Optional
 class DataSourceConf:
     version: str
 
-    source: str
     force_download: bool
 
     raw: str

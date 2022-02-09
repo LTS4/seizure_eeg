@@ -9,7 +9,6 @@ processed_path: "data/processed"
 tusz:
   version: "v1.5.2"
 
-  source: "tuh_eeg_seizure/${.version}/"
   password: ???
   force_download: false
 
