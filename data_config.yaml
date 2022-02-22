@@ -60,13 +60,4 @@ labels:
   binary: false
 
 signals:
-  diff_channels: false
   sampling_rate: 250 # Hz
-  clip_length: 12 # seconds
-  clip_stride: ${.clip_length} # seconds or string
-  window_len: 2 # seconds
-
-  # Interval [min, max] - include all with [null] or switch off with null
-  fft_coeffs: [100, 400]
-
-  node_level: false
