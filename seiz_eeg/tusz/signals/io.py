@@ -10,8 +10,9 @@ import pyedflib
 from pandera import check_types
 from pandera.typing import DataFrame
 
+from seiz_eeg.constants import EEG_CHANNELS
 from seiz_eeg.schemas import SignalsDF
-from seiz_eeg.tusz.constants import CHANNELS, REGEX_SIGNAL_CHANNELS
+from seiz_eeg.tusz.constants import REGEX_SIGNAL_CHANNELS
 
 
 def fix_channel_name(name: str) -> str:
@@ -64,7 +65,7 @@ def read_eeg_signals(edf_path: Path) -> Tuple[DataFrame[SignalsDF], int]:
 
     # Prepare list to be read and validate metadata
     try:
-        to_read = [signal_channels.index(chl) for chl in CHANNELS]
+        to_read = [signal_channels.index(chl) for chl in EEG_CHANNELS]
     except ValueError as err:
         raise ValueError(f"File {edf_path} does not contain all needed channels") from err
 
@@ -83,7 +84,7 @@ def read_eeg_signals(edf_path: Path) -> Tuple[DataFrame[SignalsDF], int]:
     # signals[ch_name] = edf_reader.readSignal(i)
     signals = pd.DataFrame(
         data=np.array([edf_reader.readSignal(i) for i in to_read]).T,
-        columns=CHANNELS,
+        columns=EEG_CHANNELS,
     )
 
     return signals, ref_rate

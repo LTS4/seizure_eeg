@@ -11,8 +11,8 @@ from pandera import check_types
 from pandera.typing import DataFrame
 from torch.utils.data import Dataset
 
+from seiz_eeg.constants import EEG_CHANNELS, EEG_MONTAGES, GLOBAL_CHANNEL
 from seiz_eeg.schemas import ClipsDF
-from seiz_eeg.tusz.constants import CHANNELS, GLOBAL_CHANNEL, MONTAGES
 from seiz_eeg.tusz.signals.io import read_parquet
 from seiz_eeg.tusz.signals.process import get_diff_signals
 
@@ -171,7 +171,7 @@ class EEGDataset(Dataset):
 
         # 1. (opt) Subtract pairwise columns
         if self.diff_channels:
-            signals = get_diff_signals(signals, MONTAGES).values
+            signals = get_diff_signals(signals, EEG_MONTAGES).values
         else:
             signals = signals.values
 
@@ -217,9 +217,9 @@ class EEGDataset(Dataset):
 
     def get_channels_names(self) -> List[str]:
         if self.diff_channels:
-            return MONTAGES
+            return EEG_MONTAGES
         else:
-            return CHANNELS
+            return EEG_CHANNELS
 
     def _compute_stats(self) -> Tuple[torch.Tensor, torch.Tensor]:
         """Compute mean and std of signals and store result in ``self.(mean|std)``"""

@@ -8,13 +8,9 @@ import pandas as pd
 from pandera import check_types
 from pandera.typing import DataFrame
 
+from seiz_eeg.constants import GLOBAL_CHANNEL
 from seiz_eeg.schemas import ClipsDF, LabelDF
-from seiz_eeg.tusz.constants import (
-    GLOBAL_CHANNEL,
-    REGEX_LABEL,
-    REGEX_MONTAGE,
-    REGEX_SYMBOLS,
-)
+from seiz_eeg.tusz.constants import REGEX_LABEL, REGEX_MONTAGE, REGEX_SYMBOLS
 from seiz_eeg.tusz.utils import check_label, concat_labels
 
 
