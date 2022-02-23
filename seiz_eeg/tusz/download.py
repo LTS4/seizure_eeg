@@ -54,7 +54,11 @@ def download(version: str, target: str, password: str):
     while True:
         # spawn rsync
         child = pexpect.spawn(
-            f"rsync -auxvL nedc@www.isip.piconepress.com:data/eeg/tuh_eeg_seizure/{version}/ {target}",
+            (
+                "rsync -auxvL "
+                f"nedc@www.isip.piconepress.com:data/eeg/tuh_eeg_seizure/{version}/ "
+                f"{target}"
+            ),
             encoding="utf-8",
         )
         child.logfile_read = sys.stdout
