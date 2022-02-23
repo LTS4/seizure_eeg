@@ -2,7 +2,7 @@
 import pandera as pa
 from pandera.typing import DateTime, Index, Series
 
-from seiz_eeg.tusz.constants import CHANNELS, MONTAGES
+from seiz_eeg.constants import EEG_CHANNELS, EEG_MONTAGES
 
 
 class LabelDF(pa.SchemaModel):
@@ -58,13 +58,13 @@ class ClipsDF(pa.SchemaModel):
 class SignalsDF(pa.SchemaModel):
     """Class for eeg signals: columns are channels names and rows are samples"""
 
-    channel: Series[float] = pa.Field(alias="|".join(CHANNELS), regex=True)
+    channel: Series[float] = pa.Field(alias="|".join(EEG_CHANNELS), regex=True)
 
 
 class SignalsDiffDF(pa.SchemaModel):
     """Class for eeg signals: columns are names of channels diffs and rows are samples"""
 
-    channel: Series[float] = pa.Field(alias="|".join(MONTAGES), regex=True)
+    channel: Series[float] = pa.Field(alias="|".join(EEG_MONTAGES), regex=True)
 
 
 class DigitalSignalsMeta(pa.SchemaModel):
