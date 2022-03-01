@@ -28,13 +28,14 @@ def make_clips(
     Args:
         annotations (DataFrame[ClipsDF]): Dataframe containing seizure annotations
         clip_length (Union[int, float]): Lenght of the output clips, in same unit as ``start_time``
-            and ``end_time`` of *annotations*. Negative value to
+            and ``end_time`` of *annotations*. A negative value returns the
+            segments unchanged, but sort the dataset by index.
         clip_stride (Union[int, float, str]): Stride to extract the start times of the clips.
             Integer or real values give explicit stride. If string, must be one of the following:
                 - "start": extract one clip per segment, starting at onset/termination label.
 
     Raises:
-        ValueError: If ``clip_lenght`` is negative, or an invalid string
+        ValueError: If ``clip_stride`` is negative, or an invalid string
 
     Returns:
         DataFrame[ClipsDF]: Clips dataframe
