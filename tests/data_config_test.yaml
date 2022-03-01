@@ -1,0 +1,62 @@
+################################################################################
+# DATA CONFIG ##################################################################
+
+dataset: tusz
+
+test_path: "tests/data"
+
+tusz:
+  version: "v1.5.2"
+
+  password: ???
+  force_download: false
+
+  raw: "${test_path}/raw"
+  raw_edf: "${.raw}/edf"
+  raw_doc: "${.raw}/_DOCS"
+
+  processed: "${processed_path}/TUSZ/"
+
+  subsets:
+    - dev
+    - train
+
+  excluded_patients:
+    dev:
+      - "00001027"
+      - "00001981"
+      - "00004671"
+      - "00006546"
+      - "00009842"
+    train: []
+
+labels:
+  map:
+    bckg: 0 # Background
+
+    # SEIZURE LABEL - BINARY
+    seiz: 1
+
+    # COMBINED FOCAL
+    spsz: 1 # Simple Partial Seizure
+    cpsz: 1 # Complex Partial Seizure
+    fnsz: 1 # Focal Non-Specific Seizure
+
+    # COMBINED TONIC
+    tnsz: 2 # Tonic Seizure
+    cnsz: 2 # Clonic Seizure
+    tcsz: 2 # Tonic Clonic Seizure
+
+    # GENERALIZED NON-SPECIFIC
+    gnsz: 3 # Generalized Non-Specific Seizure
+
+    # Absence Seizure
+    absz: 4 # Absence Seizure
+
+    # EXCLUDED
+    mysz: null # Myoclonic Seizure
+
+  binary: false
+
+signals:
+  sampling_rate: 250 # Hz
