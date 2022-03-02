@@ -37,7 +37,7 @@ class SplitWindows:
 class ExtractFromAxis:
     """Extract slice of tensor from given axis"""
 
-    def __init__(self, axis: int, extremes: Optional[Tuple(Optional[int])]) -> None:
+    def __init__(self, axis: int, extremes: Optional[Tuple[Optional[int]]]) -> None:
         self.axis = axis
         self.extremes = extremes
 

@@ -26,7 +26,7 @@ class EEGDataset(Dataset):
         *,
         clip_length: float,
         clip_stride: Union[int, float, str],
-        signal_transform: Optional[Callable] = None,
+        signal_transform: Optional[Callable[[torch.Tensor], torch.Tensor]] = None,
         diff_channels: Optional[bool] = False,
         node_level: Optional[bool] = False,
         device: Optional[str] = None,
