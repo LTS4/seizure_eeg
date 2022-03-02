@@ -8,7 +8,7 @@ import torch
 class Concatenate:
     """Apply list of functions one after the other"""
 
-    def __init__(self, func_list: List[Callable]) -> None:
+    def __init__(self, func_list: List[Callable[[Any], Any]]) -> None:
         self.func_list = func_list
 
     def __call__(self, *args: Any) -> Any:
@@ -27,7 +27,7 @@ class SplitWindows:
     def __call__(self, signals: torch.Tensor) -> torch.Tensor:
         """Split windows"""
 
-        signals = signals.reshape(
+        return signals.reshape(
             signals.shape[0] // self.window_size,  # nb of windows
             self.window_size,  # nb of samples per window (time axis)
             signals.shape[1],  # nb of signals
@@ -37,7 +37,7 @@ class SplitWindows:
 class ExtractFromAxis:
     """Extract slice of tensor from given axis"""
 
-    def __init__(self, axis: int, extremes: Optional[Tuple[Optional[int]]]) -> None:
+    def __init__(self, axis: int, extremes: Tuple[Optional[int], Optional[int]]) -> None:
         self.axis = axis
         self.extremes = extremes
 
