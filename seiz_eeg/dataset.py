@@ -129,7 +129,7 @@ class EEGDataset(Dataset):
         N = len(samples) * np.prod(self.output_shape[0])
         mean = torch.sum(t_sum) / N
         # Compute std with Bessel's correction
-        std = torch.sqrt((torch.sum(t_sum_sq) - N * self.mean**2) / (N - 1))
+        std = torch.sqrt((torch.sum(t_sum_sq) - N * mean**2) / (N - 1))
 
         return mean, std
 
