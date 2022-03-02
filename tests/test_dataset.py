@@ -1,7 +1,8 @@
-# pylint: disable=[redefined-outer-name, no-self-use]
+# pylint: disable=[redefined-outer-name, no-self-use, pointless-statement]
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.random import default_rng
 
 from seiz_eeg.dataset import EEGDataset, make_clips
 from seiz_eeg.schemas import ClipsDF
@@ -68,4 +69,25 @@ class TestMakeClips:
 
 
 class TestEEGDataset:
-    pass
+    """Tests for :py:`EEGDataset`"""
+
+    @pytest.fixture(params=[True, False], ids=lambda x: f"diff_channels:{x}")
+    def diff_channels(self, request):
+        return request.param
+
+    def test_dataset(self, segments_df, diff_channels):
+        """Test construction and iteration on random samples"""
+        dataset = EEGDataset(
+            segments_df,
+            clip_length=10,
+            clip_stride=5,
+            signal_transform=None,
+            diff_channels=diff_channels,
+            node_level=False,
+            device="cpu",
+        )
+
+        rng = default_rng(42)
+
+        for i in rng.integers(len(dataset), size=5):
+            dataset[i]
