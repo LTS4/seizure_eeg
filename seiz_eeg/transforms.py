@@ -55,13 +55,11 @@ class OldTransform:
     def __init__(
         self,
         window_size: Optional[int] = None,
-        sampling_rate: Optional[int] = None,
         fft_coeffs: Optional[Tuple[int, int]] = None,
         mean: Optional[torch.Tensor] = None,
         std: Optional[torch.Tensor] = None,
     ) -> None:
         self.window_size = window_size
-        self.s_rate = sampling_rate
         self.fft_coeffs = fft_coeffs
 
         self.mean = mean
