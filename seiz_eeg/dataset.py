@@ -107,7 +107,7 @@ class EEGDataset(Dataset):
         else:
             return EEG_CHANNELS
 
-    def _compute_stats(self) -> Tuple[torch.Tensor, torch.Tensor]:
+    def compute_stats(self) -> Tuple[torch.Tensor, torch.Tensor]:
         """Compute mean and std of signals and store result in ``self.(mean|std)``"""
 
         # This part is commented for reproducibility, consider reimplementing it if performances are
