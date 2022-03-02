@@ -65,7 +65,10 @@ class OldTransform:
         self.mean = mean
         self.std = std
 
-    def __call__(self, *args: Any, **kwds: Any) -> Any:
+    def __call__(
+        self,
+        signals: torch.Tensor,
+    ) -> Any:
         # 3. Optional: Split windows
         if self.window_size:
             time_axis = 1
