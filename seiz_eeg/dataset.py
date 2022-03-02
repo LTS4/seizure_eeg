@@ -26,7 +26,7 @@ class EEGDataset(Dataset):
         *,
         clip_length: float,
         clip_stride: Union[int, float, str],
-        signal_transform: Optional[Callable] = None,
+        signal_transform: Optional[Callable[[torch.Tensor], torch.Tensor]] = None,
         diff_channels: Optional[bool] = False,
         node_level: Optional[bool] = False,
         device: Optional[str] = None,
@@ -51,6 +51,9 @@ class EEGDataset(Dataset):
         self.signal_transform = signal_transform
 
         self.output_shape = self._get_output_shape()
+
+        self._mean = None
+        self._std = None
 
     def node_level(self, node_level: bool):
         """Setter for the node-level labels retrieval"""
@@ -107,31 +110,31 @@ class EEGDataset(Dataset):
         else:
             return EEG_CHANNELS
 
-    def _compute_stats(self) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Compute mean and std of signals and store result in ``self.(mean|std)``"""
+    def compute_stats(self) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Compute mean and std of signals and store result in ``self._(mean|std)``"""
+        if self._mean is None:
+            # This part is commented for reproducibility, consider
+            # reimplementing it if performances are too slow
+            # if len(self) > 5000:
+            #     rng = default_rng()
+            #     samples = rng.choice(len(self), size=5000, replace=False, shuffle=False)
+            #     samples.sort()  # We sort the samples to open their files in order, if possible
+            # else:
+            samples = np.arange(len(self))
 
-        # This part is commented for reproducibility, consider reimplementing it if performances are
-        # too slow
-        # if len(self) > 5000:
-        #     rng = default_rng()
-        #     samples = rng.choice(len(self), size=5000, replace=False, shuffle=False)
-        #     samples.sort()  # We sort the samples to open their files in order, if possible
-        # else:
-        samples = np.arange(len(self))
+            t_sum = torch.zeros(self.output_shape[0], dtype=torch.float64, device=self.device)
+            t_sum_sq = torch.zeros_like(t_sum)
+            for i in samples:
+                X, _ = self[i]
+                t_sum += X
+                t_sum_sq += X**2
 
-        t_sum = torch.zeros(self.output_shape[0], dtype=torch.float64, device=self.device)
-        t_sum_sq = torch.zeros_like(t_sum)
-        for i in samples:
-            X, _ = self[i]
-            t_sum += X
-            t_sum_sq += X**2
+            N = len(samples) * np.prod(self.output_shape[0])
+            self._mean = torch.sum(t_sum) / N
+            # Compute std with Bessel's correction
+            self._std = torch.sqrt((torch.sum(t_sum_sq) - N * self._mean**2) / (N - 1))
 
-        N = len(samples) * np.prod(self.output_shape[0])
-        mean = torch.sum(t_sum) / N
-        # Compute std with Bessel's correction
-        std = torch.sqrt((torch.sum(t_sum_sq) - N * self.mean**2) / (N - 1))
-
-        return mean, std
+        return self._mean, self._std
 
     def _get_output_shape(self) -> Tuple[torch.Size, torch.Size]:
         X0, y0 = self.__getitem__(0)

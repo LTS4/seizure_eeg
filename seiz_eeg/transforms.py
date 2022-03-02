@@ -37,7 +37,7 @@ class SplitWindows:
 class ExtractFromAxis:
     """Extract slice of tensor from given axis"""
 
-    def __init__(self, axis: int, extremes: Optional[Tuple(Optional[int])]) -> None:
+    def __init__(self, axis: int, extremes: Optional[Tuple[Optional[int]]]) -> None:
         self.axis = axis
         self.extremes = extremes
 
@@ -55,19 +55,20 @@ class OldTransform:
     def __init__(
         self,
         window_size: Optional[int] = None,
-        sampling_rate: Optional[int] = None,
         fft_coeffs: Optional[Tuple[int, int]] = None,
         mean: Optional[torch.Tensor] = None,
         std: Optional[torch.Tensor] = None,
     ) -> None:
         self.window_size = window_size
-        self.s_rate = sampling_rate
         self.fft_coeffs = fft_coeffs
 
         self.mean = mean
         self.std = std
 
-    def __call__(self, *args: Any, **kwds: Any) -> Any:
+    def __call__(
+        self,
+        signals: torch.Tensor,
+    ) -> Any:
         # 3. Optional: Split windows
         if self.window_size:
             time_axis = 1

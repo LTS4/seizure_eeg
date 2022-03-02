@@ -75,9 +75,9 @@ class TestEEGDataset:
     def diff_channels(self, request):
         return request.param
 
-    def test_dataset(self, segments_df, diff_channels):
-        """Test construction and iteration on random samples"""
-        dataset = EEGDataset(
+    @pytest.fixture
+    def dataset(self, segments_df, diff_channels):
+        return EEGDataset(
             segments_df,
             clip_length=10,
             clip_stride=5,
@@ -87,7 +87,18 @@ class TestEEGDataset:
             device="cpu",
         )
 
+    def test_getitem(self, dataset: EEGDataset):
+        """Test construction and iteration on random samples"""
         rng = default_rng(42)
 
         for i in rng.integers(len(dataset), size=5):
             dataset[i]
+
+    def test_compute_stats(self, dataset: EEGDataset):
+        dataset.compute_stats()
+
+    def test_get_channel_names(self, dataset: EEGDataset):
+        dataset.get_channels_names()
+
+    def test_get_label_array(self, dataset: EEGDataset):
+        dataset.get_label_array()
