@@ -1,7 +1,7 @@
 """Pipeline to generate dataset"""
 import logging
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List, Optional
 
 import pandas as pd
 import yaml
@@ -41,6 +41,7 @@ def process_walk(
     sampling_rate_out: int,
     label_map: Dict[str, int],
     binary: bool,
+    exclude_patients: Optional[List[str]] = None,
 ) -> DataFrame[ClipsDF]:
     """Precess every file in the root_folder tree and return the dataset of EEG segments"""
     logger = logging.getLogger(__name__)
@@ -63,23 +64,25 @@ def process_walk(
         try:
             signals_path: Path = (signals_out_folder / edf_path.stem).with_suffix(".parquet")
 
-            if not signals_path.exists() or reprocess:
-                # Process signals and save them
-                preprocess_signals(
-                    *read_eeg_signals(edf_path),
-                    sampling_rate_out=sampling_rate_out,
-                ).to_parquet(signals_path)
+            if exclude_patients is None or edf_path.parents[1].stem not in exclude_patients:
 
-            # Process annotations
-            annotations_list.append(
-                process_annotations(
-                    edf_path,
-                    label_map=label_map,
-                    binary=binary,
-                    signals_path=signals_path,
-                    sampling_rate=sampling_rate_out,
+                if not signals_path.exists() or reprocess:
+                    # Process signals and save them
+                    preprocess_signals(
+                        *read_eeg_signals(edf_path),
+                        sampling_rate_out=sampling_rate_out,
+                    ).to_parquet(signals_path)
+
+                # Process annotations
+                annotations_list.append(
+                    process_annotations(
+                        edf_path,
+                        label_map=label_map,
+                        binary=binary,
+                        signals_path=signals_path,
+                        sampling_rate=sampling_rate_out,
+                    )
                 )
-            )
 
         except (IOError, AssertionError) as err:
             logger.info(

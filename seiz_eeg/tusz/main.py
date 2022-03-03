@@ -45,6 +45,7 @@ def main(cfg: DataConf):
             sampling_rate_out=cfg.signals.sampling_rate,
             label_map=OmegaConf.to_container(cfg.labels.map),
             binary=cfg.labels.binary,
+            exclude_patients=cfg.tusz.excluded_patients[split],
         )
 
         segments_save_path = output_folder / split / "segments.parquet"
