@@ -13,12 +13,12 @@ def segments_df():
     return pd.read_parquet("tests/data/processed/segments.parquet")
 
 
-@pytest.fixture(params=[12, 10.5], ids=type)
+@pytest.fixture(params=[60, 33.3], ids=type)
 def clip_length(request):
     return request.param
 
 
-@pytest.fixture(params=[6, 0.5, "start"], ids=type)
+@pytest.fixture(params=[60, 55.5, "start"], ids=type)
 def clip_stride(request):
     return request.param
 
@@ -26,7 +26,7 @@ def clip_stride(request):
 @pytest.fixture
 def clips_df_start_stride(segments_df):
     min_len = np.min(segments_df[ClipsDF.end_time] - segments_df[ClipsDF.start_time])
-    return make_clips(segments_df, min_len, clip_stride="start")
+    return make_clips(segments_df, clip_length=min_len, clip_stride="start")
 
 
 class TestMakeClips:
@@ -64,7 +64,7 @@ class TestMakeClips:
 
     def test_start_stride_start_times(self, segments_df, clips_df_start_stride):
         assert np.allclose(
-            clips_df_start_stride[ClipsDF.start_time], segments_df[ClipsDF.start_time]
+            clips_df_start_stride[ClipsDF.start_time], segments_df[ClipsDF.start_time].sort_index()
         )
 
 
