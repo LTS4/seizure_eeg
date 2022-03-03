@@ -27,15 +27,15 @@ class EEGDataset(Dataset):
         clip_length: float,
         clip_stride: Union[int, float, str],
         signal_transform: Optional[Callable[[torch.Tensor], torch.Tensor]] = None,
-        diff_channels: Optional[bool] = False,
-        node_level: Optional[bool] = False,
+        diff_channels: bool = False,
+        node_level: bool = False,
         device: Optional[str] = None,
     ) -> None:
         """Dataset of EEG clips with seizure labels
 
         Args:
             clips_df (DataFrame[ClipsDF]): Pandas dataframe of EEG clips
-            node_level (Optional[bool]): Wheter to get node-level or global labels
+            node_level (bool): Wheter to get node-level or global labels
                 (only latter is currently supported)
             device (Optional[str], optional): Torch device. Defaults to None.
         """
@@ -43,6 +43,7 @@ class EEGDataset(Dataset):
 
         logging.debug("Creating clips from segments")
         self.clips_df = make_clips(segments_df, clip_length=clip_length, clip_stride=clip_stride)
+        self._clip_lenght = clip_length
 
         self.diff_channels = diff_channels
         self.node_level(node_level)
@@ -65,7 +66,7 @@ class EEGDataset(Dataset):
         else:
             self._clips_df = self.clips_df.loc[idx[:, :, :, GLOBAL_CHANNEL]]
 
-    def _get_from_df(self, index: int) -> Tuple[Union[int, List[int]], float, float, str]:
+    def _get_from_df(self, index: int) -> Tuple[Union[int, List[int]], float, float, int, str]:
         if self._node_level:
             raise NotImplementedError
 
@@ -81,6 +82,8 @@ class EEGDataset(Dataset):
 
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
         label, start_time, end_time, s_rate, signals_path = self._get_from_df(index)
+
+        assert end_time - start_time == self._clip_lenght
 
         start_sample = int(start_time * s_rate)
         end_sample = int(end_time * s_rate)
