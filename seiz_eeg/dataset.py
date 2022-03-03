@@ -83,10 +83,10 @@ class EEGDataset(Dataset):
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
         label, start_time, end_time, s_rate, signals_path = self._get_from_df(index)
 
-        assert end_time - start_time == self._clip_lenght
+        assert np.allclose(end_time - start_time, self._clip_lenght)
 
         start_sample = int(start_time * s_rate)
-        end_sample = int(end_time * s_rate)
+        end_sample = start_sample + self._clip_lenght * s_rate
         signals = read_parquet(signals_path).iloc[start_sample:end_sample]
 
         # 1. (opt) Subtract pairwise columns
