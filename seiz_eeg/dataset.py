@@ -83,11 +83,16 @@ class EEGDataset(Dataset):
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
         label, start_time, end_time, s_rate, signals_path = self._get_from_df(index)
 
+        start_sample = int(start_time * s_rate)
+
         if self._clip_lenght > 0:
             assert np.allclose(end_time - start_time, self._clip_lenght)
+            # We use clip_lenght instead of end_time to avoid floating point errors
+            end_sample = start_sample + self._clip_lenght * s_rate
+        else:
+            # In this case we return segments instead of clips, note they have different lengths
+            end_sample = int(end_time * s_rate)
 
-        start_sample = int(start_time * s_rate)
-        end_sample = start_sample + self._clip_lenght * s_rate
         signals = read_parquet(signals_path).iloc[start_sample:end_sample]
 
         # 1. (opt) Subtract pairwise columns
