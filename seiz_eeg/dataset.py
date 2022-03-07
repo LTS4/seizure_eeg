@@ -83,7 +83,8 @@ class EEGDataset(Dataset):
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
         label, start_time, end_time, s_rate, signals_path = self._get_from_df(index)
 
-        assert np.allclose(end_time - start_time, self._clip_lenght)
+        if self._clip_lenght > 0:
+            assert np.allclose(end_time - start_time, self._clip_lenght)
 
         start_sample = int(start_time * s_rate)
         end_sample = start_sample + self._clip_lenght * s_rate
