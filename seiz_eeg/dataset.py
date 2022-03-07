@@ -94,6 +94,7 @@ class EEGDataset(Dataset):
             end_sample = int(end_time * s_rate)
 
         signals = read_parquet(signals_path).iloc[start_sample:end_sample]
+        assert 0 not in signals.shape
 
         # 1. (opt) Subtract pairwise columns
         if self.diff_channels:
