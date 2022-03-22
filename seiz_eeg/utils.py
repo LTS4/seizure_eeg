@@ -6,10 +6,74 @@ import numpy as np
 import pandas as pd
 from numpy.random import default_rng
 from pandera import check_types
-from pandera.typing import DataFrame
+from pandera.typing import DataFrame, Series
 from tqdm.autonotebook import tqdm
 
 from seiz_eeg.schemas import ClipsDF
+
+
+def _get_mask(
+    start_times: Series[float],
+    end_times: Series[float],
+    clip_start: float,
+    clip_end: float,
+    overlap_action: str,
+) -> Series[bool]:
+    inner_mask = (start_times <= clip_start) & (clip_end <= end_times)
+
+    if overlap_action == "ignore":
+        return inner_mask
+    else:
+        if overlap_action == "right":
+            left_mask = np.zeros_like(inner_mask)
+        else:
+            left_mask = (clip_start <= start_times) & (start_times <= clip_end)
+
+        if overlap_action == "left":
+            right_mask = np.zeros_like(inner_mask)
+        else:
+            right_mask = (start_times <= clip_end) & (clip_end <= end_times)
+
+        if overlap_action not in ("right", "left"):
+            outer_mask = (clip_start <= start_times) & (end_times <= clip_end)
+        else:
+            outer_mask = np.zeros_like(inner_mask)
+
+        return inner_mask | left_mask | right_mask | outer_mask
+
+
+def _handle_overlaps(
+    copy_vals: DataFrame, index_names: List[str], overlap_action: str
+) -> DataFrame:
+    """Handle overlapping (duplicated) clips based on specified action.
+
+    Args:
+        copy_vals (DataFrame): Intermediate clips dataframe
+        index_names (List[str]): List of columns in :var:`copy_vars` to identify overlaps (indices)
+        overlap_action (str): _description_
+
+    Raises:
+        AssertionError: _description_
+
+    Returns:
+        DataFrame: _description_
+    """
+    duplicated = copy_vals.duplicated(subset=index_names, keep=False)
+
+    if overlap_action == "seizure":
+        # Since background is 0, one seizure label will alway get rtrieved by the max
+        # Clip sizes should be small enough to avoid multiple overlaps.
+        seiz_labels = copy_vals.loc[duplicated].groupby(index_names)[ClipsDF.label].max()
+        copy_vals = copy_vals.set_index(index_names)
+        copy_vals.update(seiz_labels)
+        copy_vals = copy_vals.reset_index()
+
+    elif overlap_action == "bkgd":
+        copy_vals.loc[duplicated, ClipsDF.label] = 0
+    else:
+        raise AssertionError("Duplicated values in clips extraction")
+
+    return copy_vals.drop_duplicates(subset=index_names, keep="first")
 
 
 @check_types
@@ -70,51 +134,17 @@ def make_clips(
         ):
             clip_end = clip_start + clip_length
 
-            inner_mask = (start_times <= clip_start) & (clip_end <= end_times)
+            copy_vals = segments_df[
+                _get_mask(start_times, end_times, clip_start, clip_end, overlap_action)
+            ].copy()
 
-            if overlap_action == "ignore":
-                bool_mask = inner_mask
-            else:
-                if overlap_action == "right":
-                    left_mask = np.zeros_like(inner_mask)
-                else:
-                    left_mask = (clip_start <= start_times) & (start_times <= clip_end)
-
-                if overlap_action == "left":
-                    right_mask = np.zeros_like(inner_mask)
-                else:
-                    right_mask = (start_times <= clip_end) & (clip_end <= end_times)
-
-                if overlap_action not in ("right", "left"):
-                    outer_mask = (clip_start <= start_times) & (end_times <= clip_end)
-                else:
-                    outer_mask = np.zeros_like(bool_mask)
-
-                bool_mask = inner_mask | left_mask | right_mask | outer_mask
-
-            copy_vals = segments_df[bool_mask].copy()
             copy_vals[[ClipsDF.segment, ClipsDF.start_time, ClipsDF.end_time]] = (
                 clip_idx,
                 clip_start,
                 clip_end,
             )
 
-            duplicated = copy_vals.duplicated(subset=index_names, keep=False)
-
-            if overlap_action == "seizure":
-                # Since background is 0, one seizure label will alway get rtrieved by the max
-                # Clip sizes should be small enough to avoid multiple overlaps.
-                seiz_labels = copy_vals.loc[duplicated].groupby(index_names)[ClipsDF.label].max()
-                copy_vals = copy_vals.set_index(index_names)
-                copy_vals.update(seiz_labels)
-                copy_vals = copy_vals.reset_index()
-
-            elif overlap_action == "bkgd":
-                copy_vals.loc[duplicated, ClipsDF.label] = 0
-            else:
-                raise AssertionError("Duplicated values in clips extraction")
-
-            out_list.append(copy_vals.drop_duplicates(subset=index_names, keep="first"))
+            out_list.append(_handle_overlaps(copy_vals, index_names, overlap_action))
 
         clips = pd.concat(out_list)
     elif clip_stride == "start":
