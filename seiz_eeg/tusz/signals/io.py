@@ -1,7 +1,6 @@
 """I/O functions for EDF signals"""
 import re
 from functools import lru_cache
-from optparse import Option
 from pathlib import Path
 from typing import List, Optional, Tuple
 
