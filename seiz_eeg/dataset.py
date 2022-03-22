@@ -26,6 +26,7 @@ class EEGDataset(Dataset):
         *,
         clip_length: float,
         clip_stride: Union[int, float, str],
+        overlap_action: str = "ignore",
         signal_transform: Optional[Callable[[torch.Tensor], torch.Tensor]] = None,
         diff_channels: bool = False,
         node_level: bool = False,
@@ -34,15 +35,28 @@ class EEGDataset(Dataset):
         """Dataset of EEG clips with seizure labels
 
         Args:
-            clips_df (DataFrame[ClipsDF]): Pandas dataframe of EEG clips
-            node_level (bool): Wheter to get node-level or global labels
-                (only latter is currently supported)
+            segments_df (DataFrame[ClipsDF]): Pandas dataframe of EEG semgnets annotations
+            clip_length (float): Clip lenght for :func:`make_clips`
+            clip_stride (Union[int, float, str]): Clip stride for :func:`make_clips`
+            overlap_action (str, optional): Overlap action for
+                :func:`make_clips`. Defaults to 'ignore'.
+            signal_transform (Optional[Callable[[torch.Tensor], torch.Tensor]],
+                optional): Transformation to apply to signals. Defaults to None.
+            diff_channels (bool, optional): Whether to use channel differences
+                or not. Defaults to False.
+            node_level (bool, optional): Wheter to get node-level or global
+                labels (only latter is currently supported). Defaults to False.
             device (Optional[str], optional): Torch device. Defaults to None.
         """
         super().__init__()
 
         logging.debug("Creating clips from segments")
-        self.clips_df = make_clips(segments_df, clip_length=clip_length, clip_stride=clip_stride)
+        self.clips_df = make_clips(
+            segments_df,
+            clip_length=clip_length,
+            clip_stride=clip_stride,
+            overlap_action=overlap_action,
+        )
         self._clip_lenght = clip_length
 
         self.diff_channels = diff_channels
@@ -164,6 +178,7 @@ class EEGFileDataset(EEGDataset):
         segments_df: DataFrame[ClipsDF],
         *,
         clip_length: float,
+        overlap_action: str = "ignore",
         signal_transform: Optional[Callable[[torch.Tensor], torch.Tensor]] = None,
         diff_channels: bool = False,
         node_level: bool = False,
@@ -173,6 +188,7 @@ class EEGFileDataset(EEGDataset):
             segments_df,
             clip_length=clip_length,
             clip_stride=clip_length,
+            overlap_action=overlap_action,
             signal_transform=signal_transform,
             diff_channels=diff_channels,
             node_level=node_level,
