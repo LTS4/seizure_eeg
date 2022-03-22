@@ -7,6 +7,7 @@ import pandas as pd
 from numpy.random import default_rng
 from pandera import check_types
 from pandera.typing import DataFrame
+from tqdm.autonotebook import tqdm
 
 from seiz_eeg.schemas import ClipsDF
 
@@ -50,7 +51,12 @@ def make_clips(
             raise ValueError(f"Clip stride must be postive, got {clip_stride}")
 
         out_list = []
-        for clip_idx, clip_start in enumerate(np.arange(0, end_times.max(), clip_stride)):
+        for clip_idx, clip_start in tqdm(
+            enumerate(np.arange(0, end_times.max(), clip_stride)),
+            leave=False,
+            desc="Clip extraction:",
+            total=end_times.max() // clip_stride,
+        ):
             clip_end = clip_start + clip_length
 
             bool_mask = (start_times <= clip_start) & (clip_end <= end_times)
