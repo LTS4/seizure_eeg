@@ -64,7 +64,7 @@ class EEGDataset(Dataset):
             raise NotImplementedError
             # self._clips_df = self.clips_df.drop(GLOBAL_CHANNEL).groupby(AnnotationDF.channel)
         else:
-            self._clips_df = self.clips_df.loc[idx[:, :, :, GLOBAL_CHANNEL]]
+            self._clips_df: DataFrame[ClipsDF] = self.clips_df.loc[idx[:, :, :, GLOBAL_CHANNEL]]
 
     def _get_from_df(self, index: int) -> Tuple[Union[int, List[int]], float, float, int, str]:
         if self._node_level:
@@ -154,3 +154,49 @@ class EEGDataset(Dataset):
 
     def __len__(self) -> int:
         return len(self._clips_df)
+
+
+class EEGFileDataset(EEGDataset):
+    """Extension of :class:`EEGDataset` which returns a tensor of all clips from the same file."""
+
+    def __init__(
+        self,
+        segments_df: DataFrame[ClipsDF],
+        *,
+        clip_length: float,
+        signal_transform: Optional[Callable[[torch.Tensor], torch.Tensor]] = None,
+        diff_channels: bool = False,
+        node_level: bool = False,
+        device: Optional[str] = None,
+    ) -> None:
+        super().__init__(
+            segments_df,
+            clip_length=clip_length,
+            clip_stride=clip_length,
+            signal_transform=signal_transform,
+            diff_channels=diff_channels,
+            node_level=node_level,
+            device=device,
+        )
+
+        self.session_ids = self._clips_df.index.unique(level="session")
+        self._range = np.arange(super().__len__())
+
+    def _getclip(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
+        return super().__getitem__(index)
+
+    def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
+        # We extract the integer indices corersponding to all sessions entries
+        indices = self._range[
+            self._clips_df.index.get_loc_level(self.session_ids[index], level="session")[0]
+        ]
+
+        X, y = list(zip(*(self._getclip(i) for i in indices)))
+        return torch.stack(X, dim=0), torch.stack(y, dim=0)
+
+    def _get_output_shape(self) -> Tuple[torch.Size, torch.Size]:
+        X0, y0 = self._getclip(0)
+        X0.unsqueeze_(dim=0)
+        y0.unsqueeze_(dim=0)
+
+        return X0.shape, y0.shape
