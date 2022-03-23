@@ -133,7 +133,7 @@ def make_clips(
         for clip_idx, clip_start in tqdm(
             enumerate(np.arange(0, end_times.max(), clip_stride)),
             leave=False,
-            desc="Clip extraction:",
+            desc="Clip extraction",
             total=end_times.max() // clip_stride,
         ):
             clip_end = clip_start + clip_length
