@@ -12,6 +12,7 @@ from tqdm import tqdm
 
 from seiz_eeg.constants import EEG_CHANNELS, EEG_MONTAGES, GLOBAL_CHANNEL
 from seiz_eeg.schemas import ClipsDF
+from seiz_eeg.transforms import SplitWindows
 from seiz_eeg.tusz.signals.io import read_parquet
 from seiz_eeg.tusz.signals.process import get_diff_signals
 from seiz_eeg.utils import make_clips
@@ -60,6 +61,9 @@ class EEGDataset(Dataset):
         )
         self._clip_lenght = clip_length
 
+        self._s_rate = segments_df[ClipsDF.sampling_rate].unique().item()
+        self._clip_size = int(self._clip_lenght * self._s_rate)
+
         self.diff_channels = diff_channels
         self.node_level(node_level)
         self.device = device
@@ -81,29 +85,23 @@ class EEGDataset(Dataset):
         else:
             self._clips_df: DataFrame[ClipsDF] = self.clips_df.loc[idx[:, :, :, GLOBAL_CHANNEL]]
 
-    def _get_from_df(self, index: int) -> Tuple[Union[int, List[int]], float, float, int, str]:
+    def _get_from_df(
+        self, index: int
+    ) -> Tuple[Union[int, List[int]], float, float, np.datetime64, int, str]:
         if self._node_level:
             raise NotImplementedError
 
-        return self._clips_df.iloc[index][
-            [
-                ClipsDF.label,
-                ClipsDF.start_time,
-                ClipsDF.end_time,
-                ClipsDF.sampling_rate,
-                ClipsDF.signals_path,
-            ]
-        ]
+        return self._clips_df.iloc[index]
 
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        label, start_time, end_time, s_rate, signals_path = self._get_from_df(index)
+        label, start_time, end_time, _, s_rate, signals_path = self._get_from_df(index)
 
         start_sample = int(start_time * s_rate)
 
         if self._clip_lenght > 0:
             assert np.allclose(end_time - start_time, self._clip_lenght)
             # We use clip_lenght instead of end_time to avoid floating point errors
-            end_sample = start_sample + self._clip_lenght * s_rate
+            end_sample = start_sample + self._clip_size
         else:
             # In this case we return segments instead of clips, note they have different lengths
             end_sample = int(end_time * s_rate)
@@ -121,6 +119,7 @@ class EEGDataset(Dataset):
         signals = torch.tensor(signals, dtype=torch.float32, device=self.device)
         label = torch.tensor(label, dtype=torch.long, device=self.device)
 
+        # 3. Optionally transform
         if self.signal_transform is not None:
             signals = self.signal_transform(signals)
 
@@ -152,12 +151,12 @@ class EEGDataset(Dataset):
             for i in tqdm(samples, desc="Computing stats"):
                 X, _ = self[i]
                 t_sum += X
-                t_sum_sq += X**2
+                t_sum_sq += X ** 2
 
             N: int = len(samples) * np.prod(self.output_shape[0])
             self._mean = torch.sum(t_sum) / N
             # Compute std with Bessel's correction
-            self._std = torch.sqrt((torch.sum(t_sum_sq) - N * self._mean**2) / (N - 1))
+            self._std = torch.sqrt((torch.sum(t_sum_sq) - N * self._mean ** 2) / (N - 1))
 
         assert self._std is not None
 
@@ -179,7 +178,6 @@ class EEGFileDataset(EEGDataset):
         segments_df: DataFrame[ClipsDF],
         *,
         clip_length: float,
-        clip_stride: Union[int, float, str],
         overlap_action: str = "ignore",
         signal_transform: Optional[Callable[[torch.Tensor], torch.Tensor]] = None,
         diff_channels: bool = False,
@@ -189,7 +187,7 @@ class EEGFileDataset(EEGDataset):
         super().__init__(
             segments_df,
             clip_length=clip_length,
-            clip_stride=clip_stride,
+            clip_stride=clip_length,
             overlap_action=overlap_action,
             signal_transform=signal_transform,
             diff_channels=diff_channels,
@@ -200,17 +198,56 @@ class EEGFileDataset(EEGDataset):
         self.session_ids = self._clips_df.index.unique(level="session")
         self._range = np.arange(super().__len__())
 
+        self._split_clips = SplitWindows(self._clip_size)
+
     def _getclip(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
         return super().__getitem__(index)
 
-    def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
+    def _old__getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
         # We extract the integer indices corersponding to all sessions entries
         indices = self._range[
             self._clips_df.index.get_loc_level(self.session_ids[index], level="session")[0]
         ]
 
-        X, y = list(zip(*(self._getclip(i) for i in indices)))
+        s2 = zip(*(self._getclip(i) for i in indices))
+        X, y = s2
         return torch.stack(X, dim=0), torch.stack(y, dim=0)
+
+    def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
+        session: DataFrame[ClipsDF] = self._clips_df.loc[
+            (slice(None), self.session_ids[index]),
+        ]
+        clip_indices = session.index.get_level_values(ClipsDF.segment)
+        nb_clips = clip_indices.max() + 1
+
+        labels = torch.as_tensor(session[ClipsDF.label], dtype=torch.long, device=self.device)
+
+        end_time, signals_path = session.iloc[-1][[ClipsDF.end_time, ClipsDF.signals_path]]
+
+        end_sample = nb_clips * self._clip_size
+        assert (
+            -1 <= end_sample - end_time * self._s_rate <= 1
+        ), f"Discrepancy in lenghts for session #{index}"
+
+        signals = read_parquet(signals_path).iloc[:end_sample]
+
+        # 1. (opt) Subtract pairwise columns
+        if self.diff_channels:
+            signals = get_diff_signals(signals, EEG_MONTAGES).values
+        else:
+            signals = signals.values
+
+        # 2. Convert to torch
+        signals = torch.tensor(signals, dtype=torch.float32, device=self.device)
+
+        # 3. Clip and keep only labelled ones
+        signals = self._split_clips(signals)[clip_indices]
+
+        # 4. Optionally transform
+        if self.signal_transform is not None:
+            signals = self.signal_transform(signals)
+
+        return signals, labels
 
     def _get_output_shape(self) -> Tuple[torch.Size, torch.Size]:
         X0, y0 = self._getclip(0)
@@ -238,12 +275,12 @@ class EEGFileDataset(EEGDataset):
             for i in tqdm(samples, desc="Computing stats"):
                 X, _ = self[i]
                 t_sum += X.sum()
-                t_sum_sq += torch.sum(X**2)
+                t_sum_sq += torch.sum(X ** 2)
                 N += np.prod(X.shape)
 
             self._mean = t_sum / N
             # Compute std with Bessel's correction
-            self._std = torch.sqrt((t_sum_sq - N * self._mean**2) / (N - 1))
+            self._std = torch.sqrt((t_sum_sq - N * self._mean ** 2) / (N - 1))
 
         assert self._std is not None
 
