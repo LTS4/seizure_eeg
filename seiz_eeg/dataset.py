@@ -178,6 +178,7 @@ class EEGFileDataset(EEGDataset):
         segments_df: DataFrame[ClipsDF],
         *,
         clip_length: float,
+        clip_stride: Union[int, float, str],
         overlap_action: str = "ignore",
         signal_transform: Optional[Callable[[torch.Tensor], torch.Tensor]] = None,
         diff_channels: bool = False,
@@ -187,7 +188,7 @@ class EEGFileDataset(EEGDataset):
         super().__init__(
             segments_df,
             clip_length=clip_length,
-            clip_stride=clip_length,
+            clip_stride=clip_stride,
             overlap_action=overlap_action,
             signal_transform=signal_transform,
             diff_channels=diff_channels,
