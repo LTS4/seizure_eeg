@@ -8,6 +8,7 @@ from pandas import IndexSlice as idx
 from pandera import check_types
 from pandera.typing import DataFrame
 from torch.utils.data import Dataset
+from tqdm import tqdm
 
 from seiz_eeg.constants import EEG_CHANNELS, EEG_MONTAGES, GLOBAL_CHANNEL
 from seiz_eeg.schemas import ClipsDF
@@ -148,7 +149,7 @@ class EEGDataset(Dataset):
 
             t_sum = torch.zeros(self.output_shape[0], dtype=torch.float64, device=self.device)
             t_sum_sq = torch.zeros_like(t_sum)
-            for i in samples:
+            for i in tqdm(samples, desc="Computing stats"):
                 X, _ = self[i]
                 t_sum += X
                 t_sum_sq += X**2
@@ -234,7 +235,7 @@ class EEGFileDataset(EEGDataset):
             N = 0
             t_sum = torch.zeros((), dtype=torch.float64, device=self.device)
             t_sum_sq = torch.zeros_like(t_sum)
-            for i in samples:
+            for i in tqdm(samples, desc="Computing stats"):
                 X, _ = self[i]
                 t_sum += X.sum()
                 t_sum_sq += torch.sum(X**2)
