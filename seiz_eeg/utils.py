@@ -5,6 +5,7 @@ from typing import List, Optional, Union
 import numpy as np
 import pandas as pd
 from numpy.random import default_rng
+from pandas import IndexSlice as idx
 from pandera import check_types
 from pandera.typing import DataFrame, Series
 from tqdm.autonotebook import tqdm
@@ -162,6 +163,7 @@ def make_clips(
     else:
         raise ValueError(f"Invalid clip_stride, got {clip_stride}")
 
+    # Sorting indices requires ~70% of the time spent in this function
     return clips.set_index(index_names).sort_index()
 
 
@@ -279,3 +281,21 @@ def patient_split(
         raise ValueError("Impossible to create a valid split with given ratio")
 
     return selected
+
+
+def extract_by_seizures(segments_df: DataFrame[ClipsDF], min_nb_seiz: int) -> DataFrame[ClipsDF]:
+    """Extract only sessions with at least :var:`min_nb_seiz`.
+
+    Args:
+        segments_df (DataFrame[ClipsDF]): Segments annotation dataframe
+        min_nb_seiz (int): Minumum number of seizures per session (inclusive)
+
+    Returns:
+        DataFrame[ClipsDF]: Annotation dataframe with only requested sessions
+    """
+
+    gsegments_df = segments_df.loc[idx[:, :, :, "global"]]
+    sizes = gsegments_df[gsegments_df[ClipsDF.label] > 0].groupby("session").size()
+    to_keep = sizes[sizes >= min_nb_seiz].index
+
+    return segments_df.loc[idx[:, to_keep, :, :]]
