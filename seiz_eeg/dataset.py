@@ -203,16 +203,6 @@ class EEGFileDataset(EEGDataset):
     def _getclip(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
         return super().__getitem__(index)
 
-    def _old__getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        # We extract the integer indices corersponding to all sessions entries
-        indices = self._range[
-            self._clips_df.index.get_loc_level(self.session_ids[index], level="session")[0]
-        ]
-
-        s2 = zip(*(self._getclip(i) for i in indices))
-        X, y = s2
-        return torch.stack(X, dim=0), torch.stack(y, dim=0)
-
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
         session: DataFrame[ClipsDF] = self._clips_df.loc[
             (slice(None), self.session_ids[index]),
