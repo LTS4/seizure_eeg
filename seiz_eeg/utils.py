@@ -60,20 +60,24 @@ def _handle_overlaps(
     """
     duplicated = copy_vals.duplicated(subset=index_names, keep=False)
 
-    if overlap_action == "seizure":
-        # Since background is 0, one seizure label will alway get rtrieved by the max
-        # Clip sizes should be small enough to avoid multiple overlaps.
-        seiz_labels = copy_vals.loc[duplicated].groupby(index_names)[ClipsDF.label].max()
-        copy_vals = copy_vals.set_index(index_names)
-        copy_vals.update(seiz_labels)
-        copy_vals = copy_vals.reset_index()
+    if np.any(duplicated):
+        if overlap_action == "seizure":
+            # Since background is 0, one seizure label will alway get rtrieved by the max
+            # Clip sizes should be small enough to avoid multiple overlaps.
+            seiz_labels = copy_vals.loc[duplicated].groupby(index_names)[ClipsDF.label].max()
+            copy_vals = copy_vals.set_index(index_names)
+            copy_vals.update(seiz_labels)
+            copy_vals = copy_vals.reset_index()
+        elif overlap_action == "bkgd":
+            copy_vals.loc[duplicated, ClipsDF.label] = 0
+        else:
+            raise AssertionError(
+                f"Duplicated values in clips extraction:\n{copy_vals.loc[duplicated]}"
+            )
 
-    elif overlap_action == "bkgd":
-        copy_vals.loc[duplicated, ClipsDF.label] = 0
-    else:
-        raise AssertionError("Duplicated values in clips extraction")
+        copy_vals = copy_vals.drop_duplicates(subset=index_names, keep="first")
 
-    return copy_vals.drop_duplicates(subset=index_names, keep="first")
+    return copy_vals
 
 
 @check_types
