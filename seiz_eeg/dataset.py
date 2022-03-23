@@ -151,12 +151,12 @@ class EEGDataset(Dataset):
             for i in tqdm(samples, desc="Computing stats"):
                 X, _ = self[i]
                 t_sum += X
-                t_sum_sq += X**2
+                t_sum_sq += X ** 2
 
             N: int = len(samples) * np.prod(self.output_shape[0])
             self._mean = torch.sum(t_sum) / N
             # Compute std with Bessel's correction
-            self._std = torch.sqrt((torch.sum(t_sum_sq) - N * self._mean**2) / (N - 1))
+            self._std = torch.sqrt((torch.sum(t_sum_sq) - N * self._mean ** 2) / (N - 1))
 
         assert self._std is not None
 
@@ -196,12 +196,14 @@ class EEGFileDataset(EEGDataset):
         )
 
         self.session_ids = self._clips_df.index.unique(level="session")
-        self._range = np.arange(super().__len__())
 
         self._split_clips = SplitWindows(self._clip_size)
 
     def _getclip(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
         return super().__getitem__(index)
+
+    def __len__(self) -> int:
+        return len(self.session_ids)
 
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
         session: DataFrame[ClipsDF] = self._clips_df.loc[
@@ -265,12 +267,12 @@ class EEGFileDataset(EEGDataset):
             for i in tqdm(samples, desc="Computing stats"):
                 X, _ = self[i]
                 t_sum += X.sum()
-                t_sum_sq += torch.sum(X**2)
+                t_sum_sq += torch.sum(X ** 2)
                 N += np.prod(X.shape)
 
             self._mean = t_sum / N
             # Compute std with Bessel's correction
-            self._std = torch.sqrt((t_sum_sq - N * self._mean**2) / (N - 1))
+            self._std = torch.sqrt((t_sum_sq - N * self._mean ** 2) / (N - 1))
 
         assert self._std is not None
 
