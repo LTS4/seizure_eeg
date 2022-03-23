@@ -151,12 +151,12 @@ class EEGDataset(Dataset):
             for i in tqdm(samples, desc="Computing stats"):
                 X, _ = self[i]
                 t_sum += X
-                t_sum_sq += X ** 2
+                t_sum_sq += X**2
 
             N: int = len(samples) * np.prod(self.output_shape[0])
             self._mean = torch.sum(t_sum) / N
             # Compute std with Bessel's correction
-            self._std = torch.sqrt((torch.sum(t_sum_sq) - N * self._mean ** 2) / (N - 1))
+            self._std = torch.sqrt((torch.sum(t_sum_sq) - N * self._mean**2) / (N - 1))
 
         assert self._std is not None
 
@@ -275,12 +275,12 @@ class EEGFileDataset(EEGDataset):
             for i in tqdm(samples, desc="Computing stats"):
                 X, _ = self[i]
                 t_sum += X.sum()
-                t_sum_sq += torch.sum(X ** 2)
+                t_sum_sq += torch.sum(X**2)
                 N += np.prod(X.shape)
 
             self._mean = t_sum / N
             # Compute std with Bessel's correction
-            self._std = torch.sqrt((t_sum_sq - N * self._mean ** 2) / (N - 1))
+            self._std = torch.sqrt((t_sum_sq - N * self._mean**2) / (N - 1))
 
         assert self._std is not None
 
