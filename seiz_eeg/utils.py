@@ -150,7 +150,8 @@ def make_clips(
 
             out_list.append(_handle_overlaps(copy_vals, index_names, overlap_action))
 
-        clips = pd.concat(out_list)
+        clips = pd.concat(out_list, ignore_index=True, copy=False)
+
     elif clip_stride == "start":
         clips = segments_df.copy()
         clips[ClipsDF.end_time] = start_times + clip_length  # Clips end after given lenght

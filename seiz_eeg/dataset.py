@@ -217,3 +217,33 @@ class EEGFileDataset(EEGDataset):
         y0.unsqueeze_(dim=0)
 
         return X0.shape, y0.shape
+
+    def compute_stats(self) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Compute mean and std of signals and store result in ``self._(mean|std)``"""
+        if self._mean is None:
+            # This part is commented for reproducibility, consider
+            # reimplementing it if performances are too slow
+            # if len(self) > 5000:
+            #     rng = default_rng()
+            #     samples = rng.choice(len(self), size=5000, replace=False, shuffle=False)
+            #     samples.sort()  # We sort the samples to open their files in order, if possible
+            # else:
+            samples = np.arange(len(self))
+
+            # All sums are single items
+            N = 0
+            t_sum = torch.zeros((), dtype=torch.float64, device=self.device)
+            t_sum_sq = torch.zeros_like(t_sum)
+            for i in samples:
+                X, _ = self[i]
+                t_sum += X.sum()
+                t_sum_sq += torch.sum(X**2)
+                N += np.prod(X.shape)
+
+            self._mean = t_sum / N
+            # Compute std with Bessel's correction
+            self._std = torch.sqrt((t_sum_sq - N * self._mean**2) / (N - 1))
+
+        assert self._std is not None
+
+        return self._mean, self._std
