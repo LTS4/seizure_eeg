@@ -81,6 +81,97 @@ def _handle_overlaps(
     return copy_vals
 
 
+def _make_clips_float_stride(
+    segments_df: DataFrame[ClipsDF],
+    clip_length: Union[int, float],
+    clip_stride: Union[int, float, str],
+    overlap_action: str = "ignore",
+) -> DataFrame[ClipsDF]:
+    if clip_stride < 0:
+        raise ValueError(f"Clip stride must be postive, got {clip_stride}")
+
+    index_names = segments_df.index.names
+    segments_df = segments_df.reset_index()
+
+    start_times, end_times = (
+        segments_df[ClipsDF.start_time],
+        segments_df[ClipsDF.end_time],
+    )
+
+    out_list = []
+    for clip_idx, clip_start in tqdm(
+        enumerate(np.arange(0, end_times.max(), clip_stride)),
+        leave=False,
+        desc="Clip extraction",
+        total=end_times.max() // clip_stride,
+    ):
+        clip_end = clip_start + clip_length
+
+        copy_vals = segments_df[
+            _get_mask(start_times, end_times, clip_start, clip_end, overlap_action)
+        ].copy()
+
+        copy_vals[[ClipsDF.segment, ClipsDF.start_time, ClipsDF.end_time]] = (
+            clip_idx,
+            clip_start,
+            clip_end,
+        )
+
+        out_list.append(_handle_overlaps(copy_vals, index_names, overlap_action))
+
+    return pd.concat(out_list, ignore_index=True, copy=False).set_index(index_names)
+
+
+def _make_clips_start(
+    segments_df: DataFrame[ClipsDF],
+    clip_length: Union[int, float],
+) -> DataFrame[ClipsDF]:
+    start_times, end_times = (
+        segments_df[ClipsDF.start_time],
+        segments_df[ClipsDF.end_time],
+    )
+
+    clips = segments_df.copy()
+    clips[ClipsDF.end_time] = start_times + clip_length  # clips end after given lenght
+
+    # we only keep clips which fall completely in a segment
+    return clips.loc[clips[ClipsDF.end_time] <= end_times]
+
+
+def _make_clips_preictal(
+    segments_df: DataFrame[ClipsDF],
+    clip_length: Union[int, float],
+) -> DataFrame[ClipsDF]:
+    seiz_clips = segments_df.loc[segments_df[ClipsDF.label] > 0].copy()
+    end_times = seiz_clips[ClipsDF.end_time].copy()
+
+    seiz_clips[ClipsDF.end_time] = seiz_clips[ClipsDF.start_time] + clip_length
+    seiz_clips = seiz_clips.loc[seiz_clips[ClipsDF.end_time] <= end_times]
+
+    # Extract clips preceding seizures
+    bkgd_clips = segments_df.loc[
+        # Extract only clips with valid ictal
+        seiz_clips.index.set_levels(seiz_clips.index.levels[2] - 1, level="segment")
+    ].copy()
+
+    bkgd_clips[ClipsDF.end_time] -= clip_length
+    new_starts = bkgd_clips[ClipsDF.end_time] - clip_length
+    to_keep = bkgd_clips[ClipsDF.start_time] <= new_starts
+
+    bkgd_clips[ClipsDF.start_time] = new_starts
+    bkgd_clips = bkgd_clips[to_keep]
+
+    return pd.concat(
+        (
+            bkgd_clips,
+            seiz_clips.loc[
+                # Extract only clips with valid pre-ictal
+                bkgd_clips.index.set_levels(bkgd_clips.index.levels[2] + 1, level="segment")
+            ],
+        )
+    )
+
+
 @check_types
 def make_clips(
     segments_df: DataFrame[ClipsDF],
@@ -92,12 +183,16 @@ def make_clips(
 
     Args:
         segments_df (DataFrame[ClipsDF]): Dataframe containing annotations for EEG segments
-        clip_length (Union[int, float]): Lenght of the output clips, in same unit as *start_time*
-            and *end_time* of :arg:`segments_df`. A negative value returns the
-            segments unchanged, but sort the dataset by index.
+        clip_length (Union[int, float]): Lenght of the output clips, in same
+            unit as *start_time* and *end_time* of :arg:`segments_df`. A
+            negative value returns the segments unchanged, but sort the dataset
+            by index.
         clip_stride (Union[int, float, str]): Stride to extract the start times of the clips.
             Integer or real values give explicit stride. If string, must be one of the following:
                 - ``start``: extract one clip per segment, starting at onset/termination label.
+                - ``pre-ictal``: for each onset time extract the beginning of ictal
+                    segment and the preictal clip ending *clip_lenght* sec before onset time.
+                    Only pair of pre-ictal/ictal clips are returned
         overlap_action (str): What to do with clips overlapping segments.
             Options:
                 - ``ignore``: do not include any crossing clips
@@ -111,6 +206,7 @@ def make_clips(
 
     Raises:
         ValueError: If ``clip_stride`` is negative, or an invalid string
+        ValueError: If ``overlap_action`` is an invalid string
 
     Returns:
         DataFrame[ClipsDF]: Clips dataframe
@@ -118,53 +214,18 @@ def make_clips(
     if clip_length < 0:
         return segments_df.sort_index()
 
-    index_names = segments_df.index.names
-    segments_df = segments_df.reset_index()
-
-    start_times, end_times = (
-        segments_df[ClipsDF.start_time],
-        segments_df[ClipsDF.end_time],
-    )
-
     if isinstance(clip_stride, (int, float)):
-        if clip_stride < 0:
-            raise ValueError(f"Clip stride must be postive, got {clip_stride}")
-
-        out_list = []
-        for clip_idx, clip_start in tqdm(
-            enumerate(np.arange(0, end_times.max(), clip_stride)),
-            leave=False,
-            desc="Clip extraction",
-            total=end_times.max() // clip_stride,
-        ):
-            clip_end = clip_start + clip_length
-
-            copy_vals = segments_df[
-                _get_mask(start_times, end_times, clip_start, clip_end, overlap_action)
-            ].copy()
-
-            copy_vals[[ClipsDF.segment, ClipsDF.start_time, ClipsDF.end_time]] = (
-                clip_idx,
-                clip_start,
-                clip_end,
-            )
-
-            out_list.append(_handle_overlaps(copy_vals, index_names, overlap_action))
-
-        clips = pd.concat(out_list, ignore_index=True, copy=False)
-
+        clips = _make_clips_float_stride(segments_df, clip_length, clip_stride, overlap_action)
     elif clip_stride == "start":
-        clips = segments_df.copy()
-        clips[ClipsDF.end_time] = start_times + clip_length  # Clips end after given lenght
+        clips = _make_clips_start(segments_df, clip_length)
 
-        # We only keep clips which fall completely in a segment
-        # TODO: Consider wether changing this
-        clips = clips.loc[clips[ClipsDF.end_time] <= end_times]
+    elif clip_stride == "pre-ictal":
+        clips = _make_clips_preictal(segments_df, clip_length)
     else:
         raise ValueError(f"Invalid clip_stride, got {clip_stride}")
 
     # Sorting indices requires ~70% of the time spent in this function
-    return clips.set_index(index_names).sort_index()
+    return clips.sort_index()
 
 
 def _patient_split(
