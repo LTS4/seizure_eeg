@@ -58,8 +58,8 @@ class EEGDataset(Dataset):
         )
         self._clip_lenght = clip_length
 
-        self._s_rate = segments_df[ClipsDF.sampling_rate].unique().item()
-        self._clip_size = int(self._clip_lenght * self._s_rate)
+        self.s_rate = segments_df[ClipsDF.sampling_rate].unique().item()
+        self._clip_size = int(self._clip_lenght * self.s_rate)
 
         self.diff_channels = diff_channels
         self.node_level(node_level)
@@ -142,12 +142,12 @@ class EEGDataset(Dataset):
             for i in tqdm(samples, desc="Computing stats"):
                 X, _ = self[i]
                 t_sum += X
-                t_sum_sq += X ** 2
+                t_sum_sq += X**2
 
             N: int = len(samples) * np.prod(self.output_shape[0])
             self._mean = torch.sum(t_sum) / N
             # Compute std with Bessel's correction
-            self._std = torch.sqrt((torch.sum(t_sum_sq) - N * self._mean ** 2) / (N - 1))
+            self._std = torch.sqrt((torch.sum(t_sum_sq) - N * self._mean**2) / (N - 1))
 
         assert self._std is not None
 
@@ -207,7 +207,7 @@ class EEGFileDataset(EEGDataset):
 
         end_sample = nb_clips * self._clip_size
         assert (
-            -1 <= end_sample - end_time * self._s_rate <= 1
+            -1 <= end_sample - end_time * self.s_rate <= 1
         ), f"Discrepancy in lenghts for session #{index}"
 
         signals = read_parquet(signals_path).iloc[:end_sample]
@@ -252,12 +252,12 @@ class EEGFileDataset(EEGDataset):
             for i in tqdm(samples, desc="Computing stats"):
                 X, _ = self[i]
                 t_sum += X.sum()
-                t_sum_sq += torch.sum(X ** 2)
+                t_sum_sq += torch.sum(X**2)
                 N += np.prod(X.shape)
 
             self._mean = t_sum / N
             # Compute std with Bessel's correction
-            self._std = torch.sqrt((t_sum_sq - N * self._mean ** 2) / (N - 1))
+            self._std = torch.sqrt((t_sum_sq - N * self._mean**2) / (N - 1))
 
         assert self._std is not None
 
