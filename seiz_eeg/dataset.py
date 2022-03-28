@@ -29,7 +29,6 @@ class EEGDataset(Dataset):
         clip_length: float,
         clip_stride: Union[int, float, str],
         overlap_action: str = "ignore",
-        signal_transform: Optional[Callable[[torch.Tensor], torch.Tensor]] = None,
         diff_channels: bool = False,
         node_level: bool = False,
         device: Optional[str] = None,
@@ -42,8 +41,6 @@ class EEGDataset(Dataset):
             clip_stride (Union[int, float, str]): Clip stride for :func:`make_clips`
             overlap_action (str, optional): Overlap action for
                 :func:`make_clips`. Defaults to 'ignore'.
-            signal_transform (Optional[Callable[[torch.Tensor], torch.Tensor]],
-                optional): Transformation to apply to signals. Defaults to None.
             diff_channels (bool, optional): Whether to use channel differences
                 or not. Defaults to False.
             node_level (bool, optional): Wheter to get node-level or global
@@ -67,8 +64,6 @@ class EEGDataset(Dataset):
         self.diff_channels = diff_channels
         self.node_level(node_level)
         self.device = device
-
-        self.signal_transform = signal_transform
 
         self.output_shape = self._get_output_shape()
 
@@ -118,10 +113,6 @@ class EEGDataset(Dataset):
         # 2. Convert to torch
         signals = torch.tensor(signals, dtype=torch.float32, device=self.device)
         label = torch.tensor(label, dtype=torch.long, device=self.device)
-
-        # 3. Optionally transform
-        if self.signal_transform is not None:
-            signals = self.signal_transform(signals)
 
         return signals, label
 
@@ -179,7 +170,6 @@ class EEGFileDataset(EEGDataset):
         *,
         clip_length: float,
         overlap_action: str = "ignore",
-        signal_transform: Optional[Callable[[torch.Tensor], torch.Tensor]] = None,
         diff_channels: bool = False,
         node_level: bool = False,
         device: Optional[str] = None,
@@ -189,7 +179,6 @@ class EEGFileDataset(EEGDataset):
             clip_length=clip_length,
             clip_stride=clip_length,
             overlap_action=overlap_action,
-            signal_transform=signal_transform,
             diff_channels=diff_channels,
             node_level=node_level,
             device=device,
@@ -234,10 +223,6 @@ class EEGFileDataset(EEGDataset):
 
         # 3. Clip and keep only labelled ones
         signals = self._split_clips(signals)[clip_indices]
-
-        # 4. Optionally transform
-        if self.signal_transform is not None:
-            signals = self.signal_transform(signals)
 
         return signals, labels
 
