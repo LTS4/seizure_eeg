@@ -1,6 +1,6 @@
 """EEG Data class with common data retrieval"""
 import logging
-from typing import Callable, List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -8,7 +8,6 @@ from pandas import IndexSlice as idx
 from pandera import check_types
 from pandera.typing import DataFrame
 from torch.utils.data import Dataset
-from tqdm import tqdm
 
 from seiz_eeg.constants import EEG_CHANNELS, EEG_MONTAGES, GLOBAL_CHANNEL
 from seiz_eeg.schemas import ClipsDF
@@ -67,9 +66,6 @@ class EEGDataset(Dataset):
 
         self.output_shape = self._get_output_shape()
 
-        self._mean = None
-        self._std = None
-
     def node_level(self, node_level: bool):
         """Setter for the node-level labels retrieval"""
         self._node_level = node_level
@@ -124,34 +120,6 @@ class EEGDataset(Dataset):
             return EEG_MONTAGES
         else:
             return EEG_CHANNELS
-
-    def compute_stats(self) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Compute mean and std of signals and store result in ``self._(mean|std)``"""
-        if self._mean is None:
-            # This part is commented for reproducibility, consider
-            # reimplementing it if performances are too slow
-            # if len(self) > 5000:
-            #     rng = default_rng()
-            #     samples = rng.choice(len(self), size=5000, replace=False, shuffle=False)
-            #     samples.sort()  # We sort the samples to open their files in order, if possible
-            # else:
-            samples = np.arange(len(self))
-
-            t_sum = torch.zeros(self.output_shape[0], dtype=torch.float64, device=self.device)
-            t_sum_sq = torch.zeros_like(t_sum)
-            for i in tqdm(samples, desc="Computing stats"):
-                X, _ = self[i]
-                t_sum += X
-                t_sum_sq += X**2
-
-            N: int = len(samples) * np.prod(self.output_shape[0])
-            self._mean = torch.sum(t_sum) / N
-            # Compute std with Bessel's correction
-            self._std = torch.sqrt((torch.sum(t_sum_sq) - N * self._mean**2) / (N - 1))
-
-        assert self._std is not None
-
-        return self._mean, self._std
 
     def _get_output_shape(self) -> Tuple[torch.Size, torch.Size]:
         X0, y0 = self.__getitem__(0)
@@ -232,33 +200,3 @@ class EEGFileDataset(EEGDataset):
         y0.unsqueeze_(dim=0)
 
         return X0.shape, y0.shape
-
-    def compute_stats(self) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Compute mean and std of signals and store result in ``self._(mean|std)``"""
-        if self._mean is None:
-            # This part is commented for reproducibility, consider
-            # reimplementing it if performances are too slow
-            # if len(self) > 5000:
-            #     rng = default_rng()
-            #     samples = rng.choice(len(self), size=5000, replace=False, shuffle=False)
-            #     samples.sort()  # We sort the samples to open their files in order, if possible
-            # else:
-            samples = np.arange(len(self))
-
-            # All sums are single items
-            N = 0
-            t_sum = torch.zeros((), dtype=torch.float64, device=self.device)
-            t_sum_sq = torch.zeros_like(t_sum)
-            for i in tqdm(samples, desc="Computing stats"):
-                X, _ = self[i]
-                t_sum += X.sum()
-                t_sum_sq += torch.sum(X**2)
-                N += np.prod(X.shape)
-
-            self._mean = t_sum / N
-            # Compute std with Bessel's correction
-            self._std = torch.sqrt((t_sum_sq - N * self._mean**2) / (N - 1))
-
-        assert self._std is not None
-
-        return self._mean, self._std
