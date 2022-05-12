@@ -2,7 +2,7 @@
 import re
 from functools import lru_cache
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -15,21 +15,14 @@ from seiz_eeg.schemas import SignalsDF
 from seiz_eeg.tusz.constants import REGEX_SIGNAL_CHANNELS
 
 
-def fix_channel_name(name: str) -> str:
-    """Fix channel name if it has a known format.
-
-    Example:
-        - change "EEG {ch}-LE" to "EEG {ch}-REF"
-    """
-    return name.replace("-LE", "-REF")
+def format_channel_name(name: str) -> Optional[str]:
+    """Extract channel name based on :var:`REGEX_SIGNAL_CHANNELS`"""
+    match = re.match(REGEX_SIGNAL_CHANNELS, name)
+    return match.group("ch") if match else None
 
 
-def format_channel_names(names: List[str]) -> List[str]:
-    return [
-        match.group("ch") if match else None
-        for name in names
-        for match in (re.match(REGEX_SIGNAL_CHANNELS, name),)
-    ]
+def format_channel_names(names: List[str]) -> List[Optional[str]]:
+    return [format_channel_name(name) for name in names]
 
 
 @check_types

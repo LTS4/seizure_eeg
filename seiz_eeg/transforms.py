@@ -27,8 +27,10 @@ class SplitWindows:
     def __call__(self, signals: torch.Tensor) -> torch.Tensor:
         """Split windows"""
 
-        return signals.reshape(
-            signals.shape[0] // self.window_size,  # nb of windows
+        nb_win = signals.shape[0] // self.window_size
+
+        return signals[: nb_win * self.window_size].reshape(
+            nb_win,  # nb of windows
             self.window_size,  # nb of samples per window (time axis)
             signals.shape[1],  # nb of signals
         )
