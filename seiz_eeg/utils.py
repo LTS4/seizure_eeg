@@ -10,8 +10,15 @@ from pandera.typing import DataFrame
 from seiz_eeg.schemas import ClipsDF
 
 
+def cut_long_sessions(segments_df: DataFrame[ClipsDF], max_time: float) -> DataFrame[ClipsDF]:
+    segments_df = segments_df.loc[segments_df[ClipsDF.start_time] < max_time].copy()
+    segments_df.loc[segments_df[ClipsDF.end_time] >= max_time, ClipsDF.end_time] = max_time
+
+    return segments_df
+
+
 def _patient_split(
-    segments_df: DataFrame[ClipsDF], ratio_min: float, ratio_max: float, rng: np.random.Generator
+    df: DataFrame[ClipsDF], ratio_min: float, ratio_max: float, rng: np.random.Generator
 ) -> List[str]:
     """Compute a set of patients from segments_df indices such that they represent between ratio min
     and max of each label appearences.
@@ -21,7 +28,7 @@ def _patient_split(
     case it should be enough to rerun the split procedure.
 
     Args:
-        segments_df (DataFrame[ClipsDF]): Dataframe of EEG segments
+        df (DataFrame[ClipsDF]): Dataframe of EEG segments
         ratio_min (float): Minimum fraction of labels to cover
         ratio_max (float): Maximum fraction of labels to cover
         rng (np.random.Generator): Random number generator
@@ -38,7 +45,7 @@ def _patient_split(
     if not 0 < ratio_min <= ratio_max < 1:
         raise ValueError("ratio_[min|max] must satisfy ``0 < ratio_min <= ratio_max < 1``")
 
-    labels_by_patient = segments_df.groupby("patient")["label"]
+    labels_by_patient = df.groupby("patient")["label"]
     label_counts = labels_by_patient.value_counts().rename("counts").reset_index(level="label")
 
     label_counts["counts"] /= label_counts["label"].map(
@@ -50,7 +57,7 @@ def _patient_split(
     seen = set()
 
     # Start by filing up small classes as they have fewer choices
-    for label in segments_df["label"].value_counts().sort_values().index:
+    for label in df["label"].value_counts().sort_values().index:
         # Only look at counts of this instance
         filtered = label_counts[label_counts["label"] == label]
 
@@ -89,7 +96,7 @@ def _patient_split(
 
 
 def patient_split(
-    segments_df: DataFrame[ClipsDF], ratio_min: float, ratio_max: float, seed: Optional[int] = None
+    df: DataFrame[ClipsDF], ratio_min: float, ratio_max: float, seed: Optional[int] = None
 ) -> List[str]:
     """Compute a set of patients from segments_df indices such that they represent between ratio min
     and max of each label appearences.
@@ -100,7 +107,7 @@ def patient_split(
     no split exists.
 
     Args:
-        segments_df (DataFrame[ClipsDF]): Dataframe of EEG segments
+        df (DataFrame[ClipsDF]): Dataframe of EEG segments
         ratio_min (float): Minimum fraction of labels to cover
         ratio_max (float): Maximum fraction of labels to cover
 
@@ -116,7 +123,7 @@ def patient_split(
 
     for _ in range(10):
         try:
-            selected = _patient_split(segments_df, ratio_min, ratio_max, rng=rng)
+            selected = _patient_split(df, ratio_min, ratio_max, rng=rng)
             break
         except AssertionError:
             continue
@@ -144,27 +151,18 @@ def extract_by_seizures(segments_df: DataFrame[ClipsDF], min_nb_seiz: int) -> Da
     return segments_df.loc[idx[:, to_keep, :, :]]
 
 
-def extract_target_labels(
-    clips_df: DataFrame[ClipsDF], target_labels: List[int]
-) -> DataFrame[ClipsDF]:
-    """Extract rows of `clips_df` whose labels are in `target_labels`
+def extract_target_labels(df: DataFrame[ClipsDF], target_labels: List[int]) -> DataFrame[ClipsDF]:
+    """Extract rows of :var:`clips_df` whose labels are in :var:`target_labels`
 
     Args:
-        clips_df (DataFrame[ClipsDF]): Dataframe of EEG clips
+        df (DataFrame[ClipsDF]): Dataframe of EEG clips
         target_labels (List[int]): List of integer labels to extract
 
     Returns:
-        DataFrame[ClipsDF]: Subset of `clips_df` with desired labels.
+        DataFrame[ClipsDF]: Subset of :var:`clips_df` with desired labels.
     """
     lmap = {label: i for i, label in enumerate(target_labels)}
 
-    clips_df = clips_df.loc[clips_df["label"].isin(target_labels)].copy()
-    clips_df["label"] = clips_df["label"].map(lmap)
-    return clips_df
-
-
-def cut_long_sessions(segments_df: DataFrame[ClipsDF], max_time: float) -> DataFrame[ClipsDF]:
-    segments_df = segments_df.loc[segments_df[ClipsDF.start_time] < max_time].copy()
-    segments_df.loc[segments_df[ClipsDF.end_time] >= max_time, ClipsDF.end_time] = max_time
-
-    return segments_df
+    df = df.loc[df["label"].isin(target_labels)].copy()
+    df["label"] = df["label"].map(lmap)
+    return df
