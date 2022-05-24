@@ -163,7 +163,7 @@ The config file and the dataclasses should provide the following parameters:
     │   ├── diff_channels (bool):                       Wheter to compute channels diffrerences, e.g. "T3-T5", "P4-O2", etc.
     │   ├── sampling_rate (int):                        Desired sampling rate, in Hz
     │   ├── clip_length (float):                        Lenght of clips to extract, in seconds
-    │   ├── clip_stride (Union[int, float, str]):       Stride to extract the start times of the clips.
+    │   ├── clip_stride (Union[float, str]):       Stride to extract the start times of the clips.
     │   │                                               Integer or real values give explicit stride, in seconds.
     │   │                                               If string, must be one of the following:
     │   │                                                   - "start": extract one clip per segment, starting at onset/termination label.
