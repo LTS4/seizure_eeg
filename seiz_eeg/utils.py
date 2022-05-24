@@ -142,3 +142,29 @@ def extract_by_seizures(segments_df: DataFrame[ClipsDF], min_nb_seiz: int) -> Da
     to_keep = sizes[sizes >= min_nb_seiz].index
 
     return segments_df.loc[idx[:, to_keep, :, :]]
+
+
+def extract_target_labels(
+    clips_df: DataFrame[ClipsDF], target_labels: List[int]
+) -> DataFrame[ClipsDF]:
+    """Extract rows of `clips_df` whose labels are in `target_labels`
+
+    Args:
+        clips_df (DataFrame[ClipsDF]): Dataframe of EEG clips
+        target_labels (List[int]): List of integer labels to extract
+
+    Returns:
+        DataFrame[ClipsDF]: Subset of `clips_df` with desired labels.
+    """
+    lmap = {label: i for i, label in enumerate(target_labels)}
+
+    clips_df = clips_df.loc[clips_df["label"].isin(target_labels)].copy()
+    clips_df["label"] = clips_df["label"].map(lmap)
+    return clips_df
+
+
+def cut_long_sessions(segments_df: DataFrame[ClipsDF], max_time: float) -> DataFrame[ClipsDF]:
+    segments_df = segments_df.loc[segments_df[ClipsDF.start_time] < max_time].copy()
+    segments_df.loc[segments_df[ClipsDF.end_time] >= max_time, ClipsDF.end_time] = max_time
+
+    return segments_df
