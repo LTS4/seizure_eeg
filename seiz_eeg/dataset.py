@@ -1,12 +1,10 @@
 """EEG Data class with common data retrieval"""
 import logging
-from typing import List, Optional, Tuple, Union
+from typing import List, Tuple, Union
 
 import numpy as np
-import torch
 from pandera import check_types
 from pandera.typing import DataFrame
-from torch.utils.data import Dataset
 
 from seiz_eeg.clips import make_clips
 from seiz_eeg.constants import EEG_CHANNELS, EEG_MONTAGES, GLOBAL_CHANNEL
@@ -16,7 +14,7 @@ from seiz_eeg.tusz.signals.io import read_parquet
 from seiz_eeg.tusz.signals.process import get_diff_signals
 
 
-class EEGDataset(Dataset):
+class EEGDataset:
     """Dataset of EEG clips with seizure labels"""
 
     @check_types
@@ -29,7 +27,6 @@ class EEGDataset(Dataset):
         overlap_action: str = "ignore",
         diff_channels: bool = False,
         node_level: bool = False,
-        device: Optional[str] = None,
     ) -> None:
         """Dataset of EEG clips with seizure labels
 
@@ -43,7 +40,6 @@ class EEGDataset(Dataset):
                 or not. Defaults to False.
             node_level (bool, optional): Wheter to get node-level or global
                 labels (only latter is currently supported). Defaults to False.
-            device (Optional[str], optional): Torch device. Defaults to None.
         """
         super().__init__()
 
@@ -61,7 +57,6 @@ class EEGDataset(Dataset):
 
         self.diff_channels = diff_channels
         self.node_level(node_level)
-        self.device = device
 
         self.output_shape = self._get_output_shape()
 
@@ -85,7 +80,7 @@ class EEGDataset(Dataset):
 
         return self._clips_df.iloc[index]
 
-    def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
+    def __getitem__(self, index: int) -> Tuple[np.ndarray, np.ndarray]:
         label, start_time, end_time, _, s_rate, signals_path = self._get_from_df(index)
 
         start_sample = int(start_time * s_rate)
@@ -107,10 +102,6 @@ class EEGDataset(Dataset):
         else:
             signals = signals.values
 
-        # 2. Convert to torch
-        signals = torch.tensor(signals, dtype=torch.float32, device=self.device)
-        label = torch.tensor(label, dtype=torch.long, device=self.device)
-
         return signals, label
 
     def get_label_array(self) -> np.ndarray:
@@ -122,7 +113,7 @@ class EEGDataset(Dataset):
         else:
             return EEG_CHANNELS
 
-    def _get_output_shape(self) -> Tuple[torch.Size, torch.Size]:
+    def _get_output_shape(self) -> Tuple[tuple, tuple]:
         X0, y0 = self.__getitem__(0)
         return X0.shape, y0.shape
 
@@ -141,7 +132,6 @@ class EEGFileDataset(EEGDataset):
         overlap_action: str = "ignore",
         diff_channels: bool = False,
         node_level: bool = False,
-        device: Optional[str] = None,
     ) -> None:
         super().__init__(
             segments_df,
@@ -150,27 +140,27 @@ class EEGFileDataset(EEGDataset):
             overlap_action=overlap_action,
             diff_channels=diff_channels,
             node_level=node_level,
-            device=device,
         )
 
         self.session_ids = self._clips_df.index.unique(level="session")
 
         self._split_clips = SplitWindows(self._clip_size)
 
-    def _getclip(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
+    def _getclip(self, index: int) -> Tuple[np.ndarray, np.ndarray]:
         return super().__getitem__(index)
 
     def __len__(self) -> int:
         return len(self.session_ids)
 
-    def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        session: DataFrame[ClipsDF] = self._clips_df.loc[
-            (slice(None), self.session_ids[index]),
-        ]
+    def __getitem__(self, index: int) -> Tuple[np.ndarray, np.ndarray]:
+        session: DataFrame[ClipsDF] = self._clips_df.xs(
+            self.session_ids[index], level=ClipsDF.session
+        )
+
         clip_indices = session.index.get_level_values(ClipsDF.segment)
         nb_clips = clip_indices.max() + 1
 
-        labels = torch.as_tensor(session[ClipsDF.label], dtype=torch.long, device=self.device)
+        labels = session[ClipsDF.label].values
 
         end_time, signals_path = session.iloc[-1][[ClipsDF.end_time, ClipsDF.signals_path]]
 
@@ -187,15 +177,12 @@ class EEGFileDataset(EEGDataset):
         else:
             signals = signals.values
 
-        # 2. Convert to torch
-        signals = torch.tensor(signals, dtype=torch.float32, device=self.device)
-
         # 3. Clip and keep only labelled ones
         signals = self._split_clips(signals)[clip_indices]
 
         return signals, labels
 
-    def _get_output_shape(self) -> Tuple[torch.Size, torch.Size]:
+    def _get_output_shape(self) -> Tuple[tuple, tuple]:
         X0, y0 = self._getclip(0)
         X0.unsqueeze_(dim=0)
         y0.unsqueeze_(dim=0)

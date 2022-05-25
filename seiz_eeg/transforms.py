@@ -2,7 +2,7 @@
 """Transformations functions and classes to use in pipelines"""
 from typing import Any, Callable, List, Optional, Tuple
 
-import torch
+import numpy as np
 
 
 class Concatenate:
@@ -24,7 +24,7 @@ class SplitWindows:
     def __init__(self, window_size: int) -> None:
         self.window_size = window_size
 
-    def __call__(self, signals: torch.Tensor) -> torch.Tensor:
+    def __call__(self, signals: np.ndarray) -> np.ndarray:
         """Split windows"""
 
         nb_win = signals.shape[0] // self.window_size
@@ -43,7 +43,7 @@ class ExtractFromAxis:
         self.axis = axis
         self.extremes = extremes
 
-    def __call__(self, X: torch.Tensor) -> Any:
+    def __call__(self, X: np.ndarray) -> Any:
         # Define slices to extract
         extractor = len(X.shape) * [slice(None)]
         extractor[self.axis] = slice(*self.extremes)
@@ -58,8 +58,8 @@ class OldTransform:
         self,
         window_size: Optional[int] = None,
         fft_coeffs: Optional[Tuple[int, int]] = None,
-        mean: Optional[torch.Tensor] = None,
-        std: Optional[torch.Tensor] = None,
+        mean: Optional[np.ndarray] = None,
+        std: Optional[np.ndarray] = None,
     ) -> None:
         self.window_size = window_size
         self.fft_coeffs = fft_coeffs
@@ -69,7 +69,7 @@ class OldTransform:
 
     def __call__(
         self,
-        signals: torch.Tensor,
+        signals: np.ndarray,
     ) -> Any:
         # 3. Optional: Split windows
         if self.window_size:
@@ -90,7 +90,7 @@ class OldTransform:
             extractor[time_axis] = slice(*self.fft_coeffs)
 
             # Actual fft
-            signals = torch.abs(torch.fft.rfft(signals, axis=time_axis))
+            signals = np.abs(np.fft.rfft(signals, axis=time_axis))
             signals = signals[extractor]
 
         # Center data. This is always performed, except for `_compute_mean`
