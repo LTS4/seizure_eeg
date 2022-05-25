@@ -179,6 +179,7 @@ def make_clips(
     clip_length: float,
     clip_stride: Union[float, str, tuple],
     overlap_action: str = "ignore",
+    sort_index: bool = False,
 ) -> DataFrame[ClipsDF]:
     """Split annotations dataframe in dataframe of clips
 
@@ -236,5 +237,9 @@ def make_clips(
     else:
         raise ValueError(f"Invalid clip_stride type, got {type(clip_stride)}")
 
-    # Sorting indices requires ~70% of the time spent in this function
-    return clips.sort_index()
+    if sort_index:
+        # Sorting indices requires ~70% of the time spent in this function
+        # Consider only sorting level=[0, 1]
+        return clips.sort_index()
+    else:
+        return clips
