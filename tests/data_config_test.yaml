@@ -3,7 +3,7 @@
 
 dataset: tusz
 
-test_path: "tests/data"
+test_path: "/home/cappelle/seizure_learning/data"
 
 tusz:
   version: "v1.5.2"
@@ -15,7 +15,7 @@ tusz:
   raw_edf: "${.raw}/edf"
   raw_doc: "${.raw}/_DOCS"
 
-  processed: "${processed_path}/TUSZ/"
+  processed: "${test_path}/processed/TUSZ/"
 
   subsets:
     - dev

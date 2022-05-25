@@ -10,7 +10,9 @@ from seiz_eeg.schemas import ClipsDF
 
 @pytest.fixture
 def segments_df():
-    return pd.read_parquet("tests/data/processed/segments.parquet")
+    return pd.read_parquet(
+        "/home/cappelle/seizure_learning/data/processed/TUSZ/dev/segments.parquet"
+    )
 
 
 @pytest.fixture(params=[60, 33.3], ids=type)
@@ -81,10 +83,8 @@ class TestEEGDataset:
             segments_df,
             clip_length=10,
             clip_stride=5,
-            signal_transform=None,
             diff_channels=diff_channels,
             node_level=False,
-            device="cpu",
         )
 
     def test_getitem(self, dataset: EEGDataset):
@@ -93,9 +93,6 @@ class TestEEGDataset:
 
         for i in rng.integers(len(dataset), size=5):
             dataset[i]
-
-    def test_compute_stats(self, dataset: EEGDataset):
-        dataset.compute_stats()
 
     def test_get_channel_names(self, dataset: EEGDataset):
         dataset.get_channels_names()
