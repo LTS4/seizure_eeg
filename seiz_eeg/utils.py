@@ -146,11 +146,11 @@ def extract_by_seizures(segments_df: DataFrame[ClipsDF], min_nb_seiz: int) -> Da
         DataFrame[ClipsDF]: Annotation dataframe with only requested sessions
     """
 
-    gsegments_df = segments_df.loc[idx[:, :, :, "global"]]
-    sizes = gsegments_df[gsegments_df[ClipsDF.label] > 0].groupby("session").size()
-    to_keep = sizes[sizes >= min_nb_seiz].index
+    gsegments_df = segments_df.xs(GLOBAL_CHANNEL, level=ClipsDF.channel)
+    sess_sizes = gsegments_df[gsegments_df[ClipsDF.label] > 0].groupby(ClipsDF.session).size()
+    sess_to_keep = sess_sizes[sess_sizes >= min_nb_seiz].index.to_list()
 
-    return segments_df.loc[idx[:, to_keep, :, :]]
+    return segments_df.loc[idx[:, sess_to_keep, :, :], :]
 
 
 def extract_target_labels(df: DataFrame[ClipsDF], target_labels: List[int]) -> DataFrame[ClipsDF]:

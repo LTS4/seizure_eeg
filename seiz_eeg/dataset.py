@@ -4,7 +4,6 @@ from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import torch
-from pandas import IndexSlice as idx
 from pandera import check_types
 from pandera.typing import DataFrame
 from torch.utils.data import Dataset
@@ -74,7 +73,9 @@ class EEGDataset(Dataset):
             raise NotImplementedError
             # self._clips_df = self.clips_df.drop(GLOBAL_CHANNEL).groupby(AnnotationDF.channel)
         else:
-            self._clips_df: DataFrame[ClipsDF] = self.clips_df.loc[idx[:, :, :, GLOBAL_CHANNEL]]
+            self._clips_df: DataFrame[ClipsDF] = self.clips_df.xs(
+                GLOBAL_CHANNEL, level=ClipsDF.channel
+            )
 
     def _get_from_df(
         self, index: int
