@@ -25,7 +25,7 @@ class EEGDataset(Dataset):
         segments_df: DataFrame[ClipsDF],
         *,
         clip_length: float,
-        clip_stride: Union[float, str],
+        clip_stride: Union[float, str, tuple],
         overlap_action: str = "ignore",
         diff_channels: bool = False,
         node_level: bool = False,
@@ -34,9 +34,9 @@ class EEGDataset(Dataset):
         """Dataset of EEG clips with seizure labels
 
         Args:
-            segments_df (DataFrame[ClipsDF]): Pandas dataframe of EEG semgnets annotations
+            segments_df (DataFrame[ClipsDF]): Pandas dataframe of EEG segments annotations
             clip_length (float): Clip lenght for :func:`make_clips`
-            clip_stride (Union[float, str]): Clip stride for :func:`make_clips`
+            clip_stride (Union[float, str, tuple]): Clip stride for :func:`make_clips`
             overlap_action (str, optional): Overlap action for
                 :func:`make_clips`. Defaults to 'ignore'.
             diff_channels (bool, optional): Whether to use channel differences
