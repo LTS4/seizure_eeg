@@ -60,7 +60,7 @@ class DataSignalsConf:
             e.g. "T3-T5", "P4-O2", etc.
         sampling_rate (int): Desired sampling rate, in Hz
         clip_length (float): Lenght of clips to extract, in seconds
-        clip_stride (Union[int, float, str]): Stride to extract the start times
+        clip_stride (Union[float, str]): Stride to extract the start times
             of the clips. Integer or real values give explicit stride, in
             seconds. If string, must be one of the following:
                 - "start": extract one clip per segment, starting at
@@ -79,7 +79,7 @@ class DataSignalsConf:
     diff_channels: bool
     sampling_rate: int  # Hz
     clip_length: float  # seconds
-    clip_stride: Union[int, float, str]  # seconds
+    clip_stride: Union[float, str]  # seconds
     window_len: float  # seconds
 
     # Interval [min, max] - include all with [null] or switch off with null

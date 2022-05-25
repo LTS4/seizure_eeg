@@ -43,11 +43,14 @@ This package provides the following functionalities:
    - Data transforms
 
 The first two steps are handled by ``seiz_eeg.preprocess``, whose parameters can
-be set in the ``data_config.yaml`` file, or passed as cli arguments.
+be set in a yaml configuration file, or passed as cli arguments.
+By default, the module looks for a ``config.yaml`` file in the working
+directory, but another file can be specified with the `-c` option.
 A ``dataset`` must be specified with the corresponding option, either in the
 ``.yaml`` file, or as follows::
 
     python -m seiz_eeg.preprocess dataset=DATASET
+    # python -m seiz_eeg.preprocess -c path/to/config.yaml
 
 The creation of clips and the Pytorch Dataset are implemented in
 ``seiz_eeg.dataset``.
@@ -108,7 +111,7 @@ and EEG measurements.
 
 To download the data, you need to register (free account).
 You will get a password for the ``nedc`` username.
-The password shall be included in the ``data_config.yaml`` file, or passed to
+The password shall be included in the ``config.yaml`` file, or passed to
 the command line as follows:
 
 .. code-block:: sh
@@ -124,6 +127,12 @@ Corpus website`_.
 .. _`TUH EEG Corpus website`:
     https://isip.piconepress.com/projects/tuh_eeg/html/downloads.shtml
 
+Notes
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+In the USA the electric nerwork has a frequency of 60Hz, which should be removed
+from the data.
+
 Parameters
 ================================================================================
 
@@ -134,15 +143,15 @@ We use OmegaConf_ to merge ``.yaml`` files configuration and cli options in our
 runnable script (``seiz_eeg.preprocess``), and we recommend to use the same
 approach for user-defined code.
 
-An example of configuration file for TUH Seizure corpus is provided in |data_config|_.
-These options can be loaded by running ``OmegaConf.load("data_config.yaml")``,
+An example of configuration file for TUH Seizure corpus is provided in |config|_.
+These options can be loaded by running ``OmegaConf.load("config.yaml")``,
 which returns a ``DictConfig`` which is compatible with our dataclasses.
 
 The config file and the dataclasses should provide the following parameters:
 
 .. code-block::
 
-    data_config (DataConf)
+    config (DataConf)
     │
     ├── dataset (str):                              Abbrv. of dataset to preprocess. Currently supported:
     │                                                   - tusz: TUH Seizure Corpus
@@ -160,7 +169,7 @@ The config file and the dataclasses should provide the following parameters:
     │   ├── diff_channels (bool):                       Wheter to compute channels diffrerences, e.g. "T3-T5", "P4-O2", etc.
     │   ├── sampling_rate (int):                        Desired sampling rate, in Hz
     │   ├── clip_length (float):                        Lenght of clips to extract, in seconds
-    │   ├── clip_stride (Union[int, float, str]):       Stride to extract the start times of the clips.
+    │   ├── clip_stride (Union[float, str]):       Stride to extract the start times of the clips.
     │   │                                               Integer or real values give explicit stride, in seconds.
     │   │                                               If string, must be one of the following:
     │   │                                                   - "start": extract one clip per segment, starting at onset/termination label.
@@ -184,8 +193,8 @@ The config file and the dataclasses should provide the following parameters:
 
 .. _OmegaConf: https://omegaconf.readthedocs.io/en/latest/
 
-.. |data_config| replace:: ``data_config.yaml``
-.. _data_config: https://github.com/WilliamCappelletti/seizure_eeg/blob/main/data_config.yaml
+.. |config| replace:: ``config.yaml``
+.. _config: https://github.com/WilliamCappelletti/seizure_eeg/blob/main/config.yaml
 
 Code structure
 ================================================================================

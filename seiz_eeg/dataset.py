@@ -4,17 +4,16 @@ from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import torch
-from pandas import IndexSlice as idx
 from pandera import check_types
 from pandera.typing import DataFrame
 from torch.utils.data import Dataset
 
+from seiz_eeg.clips import make_clips
 from seiz_eeg.constants import EEG_CHANNELS, EEG_MONTAGES, GLOBAL_CHANNEL
 from seiz_eeg.schemas import ClipsDF
 from seiz_eeg.transforms import SplitWindows
 from seiz_eeg.tusz.signals.io import read_parquet
 from seiz_eeg.tusz.signals.process import get_diff_signals
-from seiz_eeg.utils import make_clips
 
 
 class EEGDataset(Dataset):
@@ -26,7 +25,7 @@ class EEGDataset(Dataset):
         segments_df: DataFrame[ClipsDF],
         *,
         clip_length: float,
-        clip_stride: Union[int, float, str],
+        clip_stride: Union[float, str, tuple],
         overlap_action: str = "ignore",
         diff_channels: bool = False,
         node_level: bool = False,
@@ -35,9 +34,9 @@ class EEGDataset(Dataset):
         """Dataset of EEG clips with seizure labels
 
         Args:
-            segments_df (DataFrame[ClipsDF]): Pandas dataframe of EEG semgnets annotations
+            segments_df (DataFrame[ClipsDF]): Pandas dataframe of EEG segments annotations
             clip_length (float): Clip lenght for :func:`make_clips`
-            clip_stride (Union[int, float, str]): Clip stride for :func:`make_clips`
+            clip_stride (Union[float, str, tuple]): Clip stride for :func:`make_clips`
             overlap_action (str, optional): Overlap action for
                 :func:`make_clips`. Defaults to 'ignore'.
             diff_channels (bool, optional): Whether to use channel differences
@@ -74,7 +73,9 @@ class EEGDataset(Dataset):
             raise NotImplementedError
             # self._clips_df = self.clips_df.drop(GLOBAL_CHANNEL).groupby(AnnotationDF.channel)
         else:
-            self._clips_df: DataFrame[ClipsDF] = self.clips_df.loc[idx[:, :, :, GLOBAL_CHANNEL]]
+            self._clips_df: DataFrame[ClipsDF] = self.clips_df.xs(
+                GLOBAL_CHANNEL, level=ClipsDF.channel
+            )
 
     def _get_from_df(
         self, index: int
