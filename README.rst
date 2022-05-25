@@ -127,6 +127,12 @@ Corpus website`_.
 .. _`TUH EEG Corpus website`:
     https://isip.piconepress.com/projects/tuh_eeg/html/downloads.shtml
 
+Notes
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+In the USA the electric nerwork has a frequency of 60Hz, which should be removed
+from the data.
+
 Parameters
 ================================================================================
 
