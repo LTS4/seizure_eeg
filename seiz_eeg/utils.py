@@ -3,10 +3,12 @@ import logging
 from typing import List, Optional
 
 import numpy as np
+import pandas as pd
 from numpy.random import default_rng
 from pandas import IndexSlice as idx
 from pandera.typing import DataFrame
 
+from seiz_eeg.constants import GLOBAL_CHANNEL
 from seiz_eeg.schemas import ClipsDF
 
 
@@ -166,3 +168,35 @@ def extract_target_labels(df: DataFrame[ClipsDF], target_labels: List[int]) -> D
     df = df.loc[df["label"].isin(target_labels)].copy()
     df["label"] = df["label"].map(lmap)
     return df
+
+
+def downsample_label(
+    df: DataFrame[ClipsDF], label: int, seed: Optional[int] = None
+) -> DataFrame[ClipsDF]:
+    """_summary_
+
+    Args:
+        df (DataFrame[ClipsDF]): _description_
+        label (int): _description_
+        seed (Optional[int], optional): _description_. Defaults to None.
+
+    Returns:
+        DataFrame[ClipsDF]: _description_
+    """
+    # We focus only on global, hoping that it is representative
+    gdf = df.xs(GLOBAL_CHANNEL, level=ClipsDF.channel)
+
+    target_mask = gdf[ClipsDF.label] == label
+    target_idx = gdf.index[target_mask]
+    other_idx = gdf.index[~target_mask]
+
+    rng = default_rng(seed)
+    target_idx = pd.MultiIndex.from_tuples(
+        rng.choice(target_idx, len(other_idx), replace=False, shuffle=False)
+    )
+
+    return (
+        df.reset_index(level=ClipsDF.channel)
+        .loc[other_idx.append(target_idx)]  #
+        .set_index(ClipsDF.channel, append=True)  #
+    )
