@@ -4,29 +4,30 @@ import pandas as pd
 import pytest
 from numpy.random import default_rng
 
+from seiz_eeg.clips import make_clips
 from seiz_eeg.dataset import EEGDataset
 
 
 @pytest.fixture
-def segments_df():
-    return pd.read_parquet(
-        "/home/cappelle/seizure_learning/data/processed/TUSZ/dev/segments.parquet"
+def clips_df():
+    return make_clips(
+        pd.read_parquet("/home/cappelle/seizure_learning/data/processed/TUSZ/dev/segments.parquet"),
+        clip_length=10,
+        clip_stride=5,
     )
 
 
 class TestEEGDataset:
-    """Tests for :py:`EEGDataset`"""
+    """Tests for :class:`EEGDataset`"""
 
     @pytest.fixture(params=[True, False], ids=lambda x: f"diff_channels:{x}")
     def diff_channels(self, request):
         return request.param
 
     @pytest.fixture
-    def dataset(self, segments_df, diff_channels):
+    def dataset(self, clips_df, diff_channels):
         return EEGDataset(
-            segments_df,
-            clip_length=10,
-            clip_stride=5,
+            clips_df,
             diff_channels=diff_channels,
             node_level=False,
         )
