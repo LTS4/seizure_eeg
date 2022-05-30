@@ -170,18 +170,22 @@ def extract_target_labels(df: DataFrame[ClipsDF], target_labels: List[int]) -> D
     return df
 
 
-def downsample_label(
-    df: DataFrame[ClipsDF], label: int, seed: Optional[int] = None
+def resample_label(
+    df: DataFrame[ClipsDF], label: int, ratio: float = 1, seed: Optional[int] = None
 ) -> DataFrame[ClipsDF]:
     """_summary_
 
     Args:
-        df (DataFrame[ClipsDF]): _description_
-        label (int): _description_
-        seed (Optional[int], optional): _description_. Defaults to None.
+        df (DataFrame[ClipsDF]): Dataframe of EEG clips or segments
+        label (int): Label to resample.
+        ratio(float, optional): Ratio of desired samples w.r.t. the total count
+            of other labels. If the desired :var:`ratio` exceeds the label
+            counts, then the label is bootstrapped (sampled with replacement),
+            otherwise it is downsampled (no replacement). Defaults to 1.
+        seed (Optional[int], optional): Random seed. Defaults to None.
 
     Returns:
-        DataFrame[ClipsDF]: _description_
+        DataFrame[ClipsDF]: Dataframe with target class resampled.
     """
     # We focus only on global, hoping that it is representative
     gdf = df.xs(GLOBAL_CHANNEL, level=ClipsDF.channel)
@@ -190,9 +194,11 @@ def downsample_label(
     target_idx = gdf.index[target_mask]
     other_idx = gdf.index[~target_mask]
 
+    nb_resampled = ratio * len(other_idx)
+
     rng = default_rng(seed)
     target_idx = pd.MultiIndex.from_tuples(
-        rng.choice(target_idx, len(other_idx), replace=False, shuffle=False)
+        rng.choice(target_idx, nb_resampled, replace=nb_resampled > len(target_idx), shuffle=False)
     )
 
     return (
