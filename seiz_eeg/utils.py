@@ -13,6 +13,20 @@ from seiz_eeg.schemas import ClipsDF
 
 
 def cut_long_sessions(segments_df: DataFrame[ClipsDF], max_time: float) -> DataFrame[ClipsDF]:
+    """Cut EEG session longer than :arg:`max_time`.
+
+    If :arg:`max_time` is smaller than zero then :arg:`segments_df` is returned unchanged.
+
+    Args:
+        segments_df (DataFrame[ClipsDF]): Dataframe of EEG segments
+        max_time (float): Cutoff time
+
+    Returns:
+        DataFrame[ClipsDF]: Datset of clipped sessions.
+    """
+    if max_time <= 0:
+        return segments_df
+
     segments_df = segments_df.loc[segments_df[ClipsDF.start_time] < max_time].copy()
     segments_df.loc[segments_df[ClipsDF.end_time] >= max_time, ClipsDF.end_time] = max_time
 
