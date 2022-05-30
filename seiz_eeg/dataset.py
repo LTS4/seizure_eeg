@@ -6,7 +6,6 @@ import numpy as np
 from pandera import check_types
 from pandera.typing import DataFrame
 
-from seiz_eeg.clips import make_clips
 from seiz_eeg.constants import EEG_CHANNELS, EEG_MONTAGES, GLOBAL_CHANNEL
 from seiz_eeg.schemas import ClipsDF
 from seiz_eeg.transforms import SplitWindows
@@ -20,40 +19,32 @@ class EEGDataset:
     @check_types
     def __init__(
         self,
-        segments_df: DataFrame[ClipsDF],
+        clips_df: DataFrame[ClipsDF],
         *,
-        clip_length: float,
-        clip_stride: Union[float, str, tuple],
-        overlap_action: str = "ignore",
         diff_channels: bool = False,
         node_level: bool = False,
     ) -> None:
         """Dataset of EEG clips with seizure labels
 
         Args:
-            segments_df (DataFrame[ClipsDF]): Pandas dataframe of EEG segments annotations
-            clip_length (float): Clip lenght for :func:`make_clips`
-            clip_stride (Union[float, str, tuple]): Clip stride for :func:`make_clips`
-            overlap_action (str, optional): Overlap action for
-                :func:`make_clips`. Defaults to 'ignore'.
+            clips_df (DataFrame[ClipsDF]): Pandas dataframe of EEG clips annotations
             diff_channels (bool, optional): Whether to use channel differences
                 or not. Defaults to False.
             node_level (bool, optional): Wheter to get node-level or global
                 labels (only latter is currently supported). Defaults to False.
+            seed (int, optional): Random seed. Defaults to None.
         """
         super().__init__()
 
         logging.debug("Creating clips from segments")
-        self.clips_df = make_clips(
-            segments_df,
-            clip_length=clip_length,
-            clip_stride=clip_stride,
-            overlap_action=overlap_action,
-        )
-        self._clip_lenght = clip_length
+        self.clips_df = clips_df
 
-        self.s_rate = segments_df[ClipsDF.sampling_rate].unique().item()
-        self._clip_size = int(self._clip_lenght * self.s_rate)
+        self.clip_lenght = np.unique(
+            self.clips_df[ClipsDF.end_time] - self.clips_df[ClipsDF.start_time]
+        ).item()
+
+        self.s_rate = clips_df[ClipsDF.sampling_rate].unique().item()
+        self._clip_size = int(self.clip_lenght * self.s_rate)
 
         self.diff_channels = diff_channels
         self.node_level(node_level)
@@ -85,8 +76,8 @@ class EEGDataset:
 
         start_sample = int(start_time * s_rate)
 
-        if self._clip_lenght > 0:
-            assert np.allclose(end_time - start_time, self._clip_lenght)
+        if self.clip_lenght > 0:
+            assert np.allclose(end_time - start_time, self.clip_lenght)
             # We use clip_lenght instead of end_time to avoid floating point errors
             end_sample = start_sample + self._clip_size
         else:
@@ -126,18 +117,13 @@ class EEGFileDataset(EEGDataset):
 
     def __init__(
         self,
-        segments_df: DataFrame[ClipsDF],
+        clips_df: DataFrame[ClipsDF],
         *,
-        clip_length: float,
-        overlap_action: str = "ignore",
         diff_channels: bool = False,
         node_level: bool = False,
     ) -> None:
         super().__init__(
-            segments_df,
-            clip_length=clip_length,
-            clip_stride=clip_length,
-            overlap_action=overlap_action,
+            clips_df,
             diff_channels=diff_channels,
             node_level=node_level,
         )
