@@ -75,7 +75,10 @@ def _handle_overlaps(
 
         copy_vals = copy_vals.drop_duplicates(subset=index_names, keep="first")
 
-    return copy_vals
+    return copy_vals.astype({ClipsDF.label: int})
+
+
+SUPPORTED_OVERLAP_ACTION = ("ignore", "right", "left", "seizure", "bkgd")
 
 
 def _make_clips_float_stride(
@@ -86,6 +89,11 @@ def _make_clips_float_stride(
 ) -> DataFrame[ClipsDF]:
     if clip_stride < 0:
         raise ValueError(f"Clip stride must be postive, got {clip_stride}")
+
+    if overlap_action not in SUPPORTED_OVERLAP_ACTION:
+        raise ValueError(
+            f"Invalid overlap_action: got {overlap_action}, must be in {SUPPORTED_OVERLAP_ACTION}"
+        )
 
     index_names = segments_df.index.names
     segments_df = segments_df.reset_index()
