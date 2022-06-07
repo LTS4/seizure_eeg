@@ -24,11 +24,9 @@ def cut_long_sessions(segments_df: DataFrame[ClipsDF], max_time: float) -> DataF
     Returns:
         DataFrame[ClipsDF]: Datset of clipped sessions.
     """
-    if max_time <= 0:
-        return segments_df
-
-    segments_df = segments_df.loc[segments_df[ClipsDF.start_time] < max_time].copy()
-    segments_df.loc[segments_df[ClipsDF.end_time] >= max_time, ClipsDF.end_time] = max_time
+    if max_time > 0:
+        segments_df = segments_df.loc[segments_df[ClipsDF.start_time] < max_time].copy()
+        segments_df.loc[segments_df[ClipsDF.end_time] >= max_time, ClipsDF.end_time] = max_time
 
     return segments_df
 
