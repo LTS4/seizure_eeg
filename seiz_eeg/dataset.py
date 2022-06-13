@@ -39,8 +39,10 @@ class EEGDataset:
         logging.debug("Creating clips from segments")
         self.clips_df = clips_df
 
+        # We compute the lenght of each segment
         lenghts = np.unique(self.clips_df[ClipsDF.end_time] - self.clips_df[ClipsDF.start_time])
-        self.clip_lenght = lenghts.item() if len(lenghts) == 1 else -1
+        # We check whether lenghts is unique, since floating error may occur
+        self.clip_lenght = lenghts[0] if np.allclose(lenghts, lenghts[0]) else -1
 
         self.s_rate = clips_df[ClipsDF.sampling_rate].unique().item()
         self._clip_size = int(self.clip_lenght * self.s_rate)
