@@ -75,7 +75,10 @@ def _handle_overlaps(
 
         copy_vals = copy_vals.drop_duplicates(subset=index_names, keep="first")
 
-    return copy_vals
+    return copy_vals.astype({ClipsDF.label: int})
+
+
+SUPPORTED_OVERLAP_ACTION = ("ignore", "right", "left", "seizure", "bkgd")
 
 
 def _make_clips_float_stride(
@@ -86,6 +89,11 @@ def _make_clips_float_stride(
 ) -> DataFrame[ClipsDF]:
     if clip_stride < 0:
         raise ValueError(f"Clip stride must be postive, got {clip_stride}")
+
+    if overlap_action not in SUPPORTED_OVERLAP_ACTION:
+        raise ValueError(
+            f"Invalid overlap_action: got {overlap_action}, must be in {SUPPORTED_OVERLAP_ACTION}"
+        )
 
     index_names = segments_df.index.names
     segments_df = segments_df.reset_index()
@@ -173,6 +181,26 @@ def _make_clips_preictal(
     )
 
 
+def _make_clips_random(
+    segments_df: DataFrame[ClipsDF],
+    clip_length: float,
+    seed: Optional[int] = None,
+) -> DataFrame[ClipsDF]:
+
+    intervals = segments_df[ClipsDF.end_time] - clip_length - segments_df[ClipsDF.start_time]
+
+    rng = np.random.default_rng(seed)
+
+    rel_start = rng.uniform(size=len(intervals))
+
+    clips = segments_df.copy()
+    clips[ClipsDF.start_time] = rel_start * intervals
+    clips[ClipsDF.end_time] = clips[ClipsDF.start_time] + clip_length
+
+    # we only keep clips which fall completely in a segment
+    return clips.loc[intervals > 0]
+
+
 @check_types
 def make_clips(
     segments_df: DataFrame[ClipsDF],
@@ -192,20 +220,21 @@ def make_clips(
         clip_stride (Union[float, str, tuple]): Stride to extract the start times of the clips.
             Integer or real values give explicit stride. If string or tuple,
             must be one of the following, with respective parameters.:
-                - ``start``: extract one clip per segment, starting at onset/termination label.
-                - ``pre-ictal``: for each onset time extract the beginning of ictal
-                    segment and the preictal clip ending *clip_lenght*, or specified sec before
-                    onset time. Only pairs of pre-ictal/ictal clips are returned
+            - ``start``: extract one clip per segment, starting at onset/termination label.
+            - ``pre-ictal``: for each onset time extract the beginning of ictal
+                segment and the preictal clip ending *clip_lenght*, or specified sec before
+                onset time. Only pairs of pre-ictal/ictal clips are returned
+            - ``random``: For each segment, extact a random clip of desired length.
         overlap_action (str): What to do with clips overlapping segments.
             Options:
-                - ``ignore``: do not include any crossing clips
-                - ``left``:the label of crossing clips is given by the left
-                    (preceding) segment
-                - ``right``: the label of crossing clips is given by the right
-                    (ending) segment
-                - ``seizure``: the label of crossing clips is given by the ictal
-                segment. (No more than two segments should be crossing)
-                - ``bkgd``: set the label of crossing clips to be 0
+            - ``ignore``: do not include any crossing clips
+            - ``left``: the label of crossing clips is given by the left
+                (preceding) segment
+            - ``right``: the label of crossing clips is given by the right
+                (ending) segment
+            - ``seizure``: the label of crossing clips is given by the ictal
+            segment. (No more than two segments should be crossing)
+            - ``bkgd``: set the label of crossing clips to be 0
 
     Raises:
         ValueError: If ``clip_stride`` is negative, or an invalid string
@@ -222,9 +251,10 @@ def make_clips(
     elif isinstance(clip_stride, str):
         if clip_stride == "start":
             clips = _make_clips_start(segments_df, clip_length)
-
         elif clip_stride == "pre-ictal":
             clips = _make_clips_preictal(segments_df, clip_length)
+        elif clip_stride == "random":
+            clips = _make_clips_random(segments_df, clip_length)
         else:
             raise ValueError(f"Invalid clip_stride, got {clip_stride}")
     elif isinstance(clip_stride, tuple):
@@ -232,6 +262,8 @@ def make_clips(
 
         if stride_name == "pre-ictal":
             clips = _make_clips_preictal(segments_df, clip_length, *args)
+        elif stride_name == "random":
+            clips = _make_clips_random(segments_df, clip_length, *args)
         else:
             raise ValueError(f"Invalid key in clip_stride, got {stride_name}")
     else:

@@ -8,11 +8,10 @@ library providing the functionality required to extract clips in the format
 required by many ML algorithms.  Currently, it is implemented for the TUH
 corpus, and other datasets will be integrated soon.  To simplify adoption, we
 focused on using well know and performant Python libraries, such as pandas_,
-numpy_, scipy_, and pytorch_.
+numpy_, and scipy_
 
 .. _pandas: https://pandas.pydata.org/
 .. _numpy: https://numpy.org/
-.. _pytorch: https://pytorch.org/
 .. _scipy: https://scipy.org/
 
 Installation
@@ -37,23 +36,23 @@ This package provides the following functionalities:
 1. Data fetching
 2. Pre-processing of EEG measurements
 3. Creation of clips dataframe, with relevant start and end times
-4. Pytorch dataset implementation, which handles:
+4. Dataset class, which handles:
 
    - Data loading
    - Data transforms
 
-The first two steps are handled by ``seiz_eeg.preprocess``, whose parameters can
-be set in a yaml configuration file, or passed as cli arguments.
+The first two steps are handled by :module:`seiz_eeg.preprocess`, whose
+parameters can be set in a yaml configuration file, or passed as cli arguments.
 By default, the module looks for a ``config.yaml`` file in the working
-directory, but another file can be specified with the `-c` option.
-A ``dataset`` must be specified with the corresponding option, either in the
+directory, but another file can be specified with the `-c` option.  A
+``dataset`` must be specified with the corresponding option, either in the
 ``.yaml`` file, or as follows::
 
     python -m seiz_eeg.preprocess dataset=DATASET
     # python -m seiz_eeg.preprocess -c path/to/config.yaml
 
-The creation of clips and the Pytorch Dataset are implemented in
-``seiz_eeg.dataset``.
+The creation of clips is provided by :module:`seiz_eeg.clips` and the
+:class:`Dataset` is implemented in :module:`seiz_eeg.dataset`.
 
 More details on parameters in the `Parameters`_ section.
 

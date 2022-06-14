@@ -34,7 +34,7 @@ good-names = [
 [tool.pylint.typecheck]
 # List of members which are set dynamically and missed by Pylint inference
 # system, and so shouldn't trigger E1101 when accessed.
-generated-members = ['numpy.*', 'torch.*']
+generated-members = ['numpy.*']
 
 [tool.pylint.design]
 max-attributes = 10
