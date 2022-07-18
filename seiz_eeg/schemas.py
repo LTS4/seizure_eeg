@@ -25,17 +25,16 @@ class LabelDF(pa.SchemaModel):
 class ClipsDF(pa.SchemaModel):
     """Dataframe for EEG annotations:
 
-    ======= ======= ======= =======  ===== ========== ======== ==== ============= ============
-    Multiindex                       Columns
-    -------------------------------  ---------------------------------------------------------
-    patient session segment channel  label start_time end_time date sampling_rate signals_path
-    ======= ======= ======= =======  ===== ========== ======== ==== ============= ============
+    ======= ======= =======  ===== ========== ======== ==== ============= ============
+    Multiindex               Columns
+    -----------------------  ---------------------------------------------------------
+    patient session segment  label start_time end_time date sampling_rate signals_path
+    ======= ======= =======  ===== ========== ======== ==== ============= ============
     """
 
     patient: Index[str]
     session: Index[str]
     segment: Index[int]
-    channel: Index[str]
 
     label: Series[int]
     start_time: Series[float]
@@ -53,6 +52,19 @@ class ClipsDF(pa.SchemaModel):
         multiindex_name = "segment_id"
         multiindex_strict = True
         multiindex_coerce = True
+
+
+class ClipsLocalDF(ClipsDF):
+    """Dataframe for channel level EEG annotations:
+
+    ======= ======= ======= =======  ===== ========== ======== ==== ============= ============
+    Multiindex                       Columns
+    -------------------------------  ---------------------------------------------------------
+    patient session segment channel  label start_time end_time date sampling_rate signals_path
+    ======= ======= ======= =======  ===== ========== ======== ==== ============= ============
+    """
+
+    channel: Index[str]
 
 
 class SignalsDF(pa.SchemaModel):
