@@ -1,12 +1,12 @@
 """EEG Data class with common data retrieval"""
 import logging
-from typing import List, Tuple, Union
+from typing import List, Tuple
 
 import numpy as np
 from pandera import check_types
 from pandera.typing import DataFrame
 
-from seiz_eeg.constants import EEG_CHANNELS, EEG_MONTAGES, GLOBAL_CHANNEL
+from seiz_eeg.constants import EEG_CHANNELS, EEG_MONTAGES
 from seiz_eeg.schemas import ClipsDF
 from seiz_eeg.transforms import SplitWindows
 from seiz_eeg.tusz.signals.io import read_parquet
@@ -22,7 +22,6 @@ class EEGDataset:
         clips_df: DataFrame[ClipsDF],
         *,
         diff_channels: bool = False,
-        node_level: bool = False,
     ) -> None:
         """Dataset of EEG clips with seizure labels
 
@@ -30,8 +29,6 @@ class EEGDataset:
             clips_df (DataFrame[ClipsDF]): Pandas dataframe of EEG clips annotations
             diff_channels (bool, optional): Whether to use channel differences
                 or not. Defaults to False.
-            node_level (bool, optional): Wheter to get node-level or global
-                labels (only latter is currently supported). Defaults to False.
             seed (int, optional): Random seed. Defaults to None.
         """
         super().__init__()
@@ -48,32 +45,11 @@ class EEGDataset:
         self._clip_size = int(self.clip_lenght * self.s_rate)
 
         self.diff_channels = diff_channels
-        self.node_level(node_level)
 
         self.output_shape = self._get_output_shape()
 
-    def node_level(self, node_level: bool):
-        """Setter for the node-level labels retrieval"""
-        self._node_level = node_level
-
-        if node_level:
-            raise NotImplementedError
-            # self._clips_df = self.clips_df.drop(GLOBAL_CHANNEL).groupby(AnnotationDF.channel)
-        else:
-            self._clips_df: DataFrame[ClipsDF] = self.clips_df.xs(
-                GLOBAL_CHANNEL, level=ClipsDF.channel
-            )
-
-    def _get_from_df(
-        self, index: int
-    ) -> Tuple[Union[int, List[int]], float, float, np.datetime64, int, str]:
-        if self._node_level:
-            raise NotImplementedError
-
-        return self._clips_df.iloc[index]
-
     def __getitem__(self, index: int) -> Tuple[np.ndarray, np.ndarray]:
-        label, start_time, end_time, _, s_rate, signals_path = self._get_from_df(index)
+        label, start_time, end_time, _, s_rate, signals_path = self.clips_df.iloc[index]
 
         start_sample = int(start_time * s_rate)
 
@@ -97,7 +73,7 @@ class EEGDataset:
         return signals, label
 
     def get_label_array(self) -> np.ndarray:
-        return self._clips_df[ClipsDF.label].values
+        return self.clips_df[ClipsDF.label].values
 
     def get_channels_names(self) -> List[str]:
         if self.diff_channels:
@@ -110,7 +86,7 @@ class EEGDataset:
         return X0.shape, y0.shape
 
     def __len__(self) -> int:
-        return len(self._clips_df)
+        return len(self.clips_df)
 
 
 class EEGFileDataset(EEGDataset):
@@ -121,15 +97,13 @@ class EEGFileDataset(EEGDataset):
         clips_df: DataFrame[ClipsDF],
         *,
         diff_channels: bool = False,
-        node_level: bool = False,
     ) -> None:
         super().__init__(
             clips_df,
             diff_channels=diff_channels,
-            node_level=node_level,
         )
 
-        self.session_ids = self._clips_df.index.unique(level="session")
+        self.session_ids = self.clips_df.index.unique(level="session")
 
         self._split_clips = SplitWindows(self._clip_size)
 
@@ -140,7 +114,7 @@ class EEGFileDataset(EEGDataset):
         return len(self.session_ids)
 
     def __getitem__(self, index: int) -> Tuple[np.ndarray, np.ndarray]:
-        session: DataFrame[ClipsDF] = self._clips_df.xs(
+        session: DataFrame[ClipsDF] = self.clips_df.xs(
             self.session_ids[index], level=ClipsDF.session
         )
 

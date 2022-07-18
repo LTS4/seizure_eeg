@@ -158,11 +158,10 @@ def extract_by_seizures(segments_df: DataFrame[ClipsDF], min_nb_seiz: int) -> Da
         DataFrame[ClipsDF]: Annotation dataframe with only requested sessions
     """
 
-    gsegments_df = segments_df.xs(GLOBAL_CHANNEL, level=ClipsDF.channel)
-    sess_sizes = gsegments_df[gsegments_df[ClipsDF.label] > 0].groupby(ClipsDF.session).size()
+    sess_sizes = segments_df[segments_df[ClipsDF.label] > 0].groupby(ClipsDF.session).size()
     sess_to_keep = sess_sizes[sess_sizes >= min_nb_seiz].index.to_list()
 
-    return segments_df.loc[idx[:, sess_to_keep, :, :], :]
+    return segments_df.loc[idx[:, sess_to_keep, :], :]
 
 
 def extract_target_labels(df: DataFrame[ClipsDF], target_labels: List[int]) -> DataFrame[ClipsDF]:
@@ -199,12 +198,10 @@ def resample_label(
     Returns:
         DataFrame[ClipsDF]: Dataframe with target class resampled.
     """
-    # We focus only on global, hoping that it is representative
-    gdf = df.xs(GLOBAL_CHANNEL, level=ClipsDF.channel)
 
-    target_mask = gdf[ClipsDF.label] == label
-    target_idx = gdf.index[target_mask]
-    other_idx = gdf.index[~target_mask]
+    target_mask = df[ClipsDF.label] == label
+    target_idx = df.index[target_mask]
+    other_idx = df.index[~target_mask]
 
     nb_resampled = ratio * len(other_idx)
 
@@ -213,8 +210,4 @@ def resample_label(
         rng.choice(target_idx, nb_resampled, replace=nb_resampled > len(target_idx), shuffle=False)
     )
 
-    return (
-        df.reset_index(level=ClipsDF.channel)
-        .loc[other_idx.append(target_idx)]  #
-        .set_index(ClipsDF.channel, append=True)  #
-    )
+    return df.loc[other_idx.append(target_idx)]

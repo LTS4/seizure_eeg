@@ -8,7 +8,7 @@ import yaml
 from pandera.typing import DataFrame
 from tqdm import tqdm
 
-from seiz_eeg.schemas import ClipsDF
+from seiz_eeg.schemas import ClipsLocalDF
 from seiz_eeg.tusz.annotations.process import process_annotations
 from seiz_eeg.tusz.io import list_all_edf_files
 from seiz_eeg.tusz.signals.io import read_eeg_signals
@@ -42,7 +42,7 @@ def process_walk(
     label_map: Dict[str, int],
     binary: bool,
     exclude_patients: Optional[List[str]] = None,
-) -> DataFrame[ClipsDF]:
+) -> DataFrame[ClipsLocalDF]:
     """Precess every file in the root_folder tree and return the dataset of EEG segments"""
     logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ def process_walk(
 
     nb_errors_skipped = 0
 
-    annotations_list = []
+    annotations_list: List[ClipsLocalDF] = []
 
     reprocess = params_changed(
         signals_out_folder / "signals_params.yaml",

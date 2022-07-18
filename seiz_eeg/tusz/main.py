@@ -6,6 +6,8 @@ from pathlib import Path
 from omegaconf import OmegaConf
 
 from seiz_eeg.config import DataConf
+from seiz_eeg.constants import GLOBAL_CHANNEL
+from seiz_eeg.schemas import ClipsLocalDF
 from seiz_eeg.tusz.download import download
 from seiz_eeg.tusz.io import write_parquet
 from seiz_eeg.tusz.process import process_walk
@@ -48,8 +50,11 @@ def main(cfg: DataConf):
             exclude_patients=cfg.tusz.excluded_patients[split],
         )
 
-        segments_save_path = output_folder / split / "segments.parquet"
-        write_parquet(segments_df, segments_save_path)
+        write_parquet(segments_df, output_folder / split / "segments_local.parquet")
+        write_parquet(
+            segments_df.xs(key=GLOBAL_CHANNEL, level=ClipsLocalDF.channel),
+            output_folder / split / "segments.parquet",
+        )
 
         logging.info(
             "Created %s dataset - # samples: %d",

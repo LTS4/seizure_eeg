@@ -18,12 +18,12 @@ import pandas as pd
 from pandera import check_types
 from pandera.typing import DataFrame, Index
 
-from seiz_eeg.schemas import ClipsDF, LabelDF
+from seiz_eeg.schemas import ClipsLocalDF, LabelDF
 from seiz_eeg.tusz.annotations.io import read_labels
 from seiz_eeg.tusz.utils import extract_session_date
 
 
-def get_channels(annotations: DataFrame[ClipsDF]) -> Index[str]:
+def get_channels(annotations: DataFrame[ClipsLocalDF]) -> Index[str]:
     return annotations.index.get_level_values("channel").unique()
 
 
@@ -32,23 +32,23 @@ def labels_to_annotations(
     edf_path: Path,
     signals_path: Path,
     sampling_rate: int,
-) -> DataFrame[ClipsDF]:
+) -> DataFrame[ClipsLocalDF]:
     """Add [patient, session, date, sampling_rate, signals_path] columns.
     patient, session, and date are extrapolated from edf_path"""
-    df[ClipsDF.patient] = edf_path.parents[1].stem
-    df[ClipsDF.session] = edf_path.stem
-    df[ClipsDF.date] = extract_session_date(edf_path.parents[0].stem)
+    df[ClipsLocalDF.patient] = edf_path.parents[1].stem
+    df[ClipsLocalDF.session] = edf_path.stem
+    df[ClipsLocalDF.date] = extract_session_date(edf_path.parents[0].stem)
 
-    df[ClipsDF.sampling_rate] = sampling_rate
-    df[ClipsDF.signals_path] = str(signals_path.absolute())
+    df[ClipsLocalDF.sampling_rate] = sampling_rate
+    df[ClipsLocalDF.signals_path] = str(signals_path.absolute())
     return df
 
 
 def map_labels(df: DataFrame, label_map: Dict[str, int]) -> DataFrame:
     """Map labels using dictioanry and convert column"""
     n_in = len(df)
-    df[ClipsDF.label] = df[ClipsDF.label].map(lambda x: label_map[x])
-    df = df.dropna().astype({ClipsDF.label: int})
+    df[ClipsLocalDF.label] = df[ClipsLocalDF.label].map(lambda x: label_map[x])
+    df = df.dropna().astype({ClipsLocalDF.label: int})
     logging.debug("Dropped %d entries with nan values", n_in)
 
     return df
@@ -62,7 +62,7 @@ def process_annotations(
     binary: bool,
     signals_path: Path,
     sampling_rate: int,
-) -> DataFrame[ClipsDF]:
+) -> DataFrame[ClipsLocalDF]:
     """Read annotations files associated to *edf_path* and add metadata
 
     Args:
@@ -81,10 +81,10 @@ def process_annotations(
         .pipe(map_labels, label_map=label_map)
         .set_index(
             [
-                ClipsDF.patient,
-                ClipsDF.session,
-                ClipsDF.segment,
-                ClipsDF.channel,
+                ClipsLocalDF.patient,
+                ClipsLocalDF.session,
+                ClipsLocalDF.segment,
+                ClipsLocalDF.channel,
             ]
         )
     )
@@ -93,23 +93,23 @@ def process_annotations(
 ####################################################################################################
 
 
-def time_to_samples(annotations: DataFrame[ClipsDF], nb_samples) -> DataFrame[ClipsDF]:
+def time_to_samples(annotations: DataFrame[ClipsLocalDF], nb_samples) -> DataFrame[ClipsLocalDF]:
     """Convert the start/end time columns of *annotations* to sample indices based on total
     ``nb_samples``"""
-    duration = annotations[ClipsDF.end_time].max()
+    duration = annotations[ClipsLocalDF.end_time].max()
 
     annotations["start_sample"] = np.floor(
-        annotations[ClipsDF.start_time] / duration * nb_samples
+        annotations[ClipsLocalDF.start_time] / duration * nb_samples
     ).astype(int)
     annotations["end_sample"] = np.ceil(
-        annotations[ClipsDF.end_time] / duration * nb_samples
+        annotations[ClipsLocalDF.end_time] / duration * nb_samples
     ).astype(int)
 
     return annotations
 
 
 def make_label_masks(
-    annotations: DataFrame[ClipsDF],
+    annotations: DataFrame[ClipsLocalDF],
     nb_samples: int,
     seiz_voc: Dict[str, int],
 ) -> DataFrame:
