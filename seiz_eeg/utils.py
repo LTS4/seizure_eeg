@@ -1,6 +1,7 @@
 """Utility functions for EEG Datasets"""
 import logging
 from typing import List, Optional
+from warnings import warn
 
 import numpy as np
 import pandas as pd
@@ -147,7 +148,37 @@ def patient_split(
     return selected
 
 
-def extract_by_seizures(segments_df: DataFrame[ClipsDF], min_nb_seiz: int) -> DataFrame[ClipsDF]:
+def patients_by_seizures(
+    segments_df: DataFrame[ClipsDF], min_nb_seiz: int, total=False
+) -> DataFrame[ClipsDF]:
+    """Filter patients to have at least :var:`min_nb_seiz`.
+
+    Args:
+        segments_df (DataFrame[ClipsDF]): Segments annotation dataframe
+        min_nb_seiz (int): Minumum number of seizures per patient (inclusive)
+        total (bool, optional): Wether to aggregate all kind of seizures in the
+            count. Defaults to False.
+
+    Returns:
+        DataFrame[ClipsDF]: _description_
+    """
+    if min_nb_seiz <= 0:
+        return segments_df
+
+    if total:
+        counts = segments_df.loc[segments_df.label.ne(0)].groupby(ClipsDF.patient).size()
+        return segments_df.loc[counts.index[counts > min_nb_seiz]].copy()
+    else:
+        counts = (
+            segments_df.loc[segments_df.label.ne(0)]
+            .groupby(ClipsDF.patient)[ClipsDF.label]
+            .value_counts()
+        )
+
+        return segments_df.loc[counts.index[counts > 5].get_level_values(ClipsDF.patient).unique()]
+
+
+def sessions_by_seizures(segments_df: DataFrame[ClipsDF], min_nb_seiz: int) -> DataFrame[ClipsDF]:
     """Extract only sessions with at least :var:`min_nb_seiz`.
 
     Args:
@@ -162,6 +193,19 @@ def extract_by_seizures(segments_df: DataFrame[ClipsDF], min_nb_seiz: int) -> Da
     sess_to_keep = sess_sizes[sess_sizes >= min_nb_seiz].index.to_list()
 
     return segments_df.loc[idx[:, sess_to_keep, :], :]
+
+
+def extract_by_seizures(segments_df: DataFrame[ClipsDF], min_nb_seiz: int) -> DataFrame[ClipsDF]:
+    """Extract only sessions with at least :var:`min_nb_seiz`. DEPRECATED.
+
+    See :func:`sessions_by_seizures` for reference.
+    """
+    warn(
+        "`extract_by_seizures` is deprecated and will be removed, use `sessions_by_seizures` instead",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return sessions_by_seizures(segments_df, min_nb_seiz)
 
 
 def extract_target_labels(df: DataFrame[ClipsDF], target_labels: List[int]) -> DataFrame[ClipsDF]:
