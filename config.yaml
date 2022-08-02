@@ -3,8 +3,7 @@
 
 dataset: ???
 
-raw_path: "data/raw"
-processed_path: "data/processed"
+root: ???
 
 tusz:
   version: "v1.5.2"
@@ -12,15 +11,16 @@ tusz:
   password: ???
   force_download: false
 
-  raw: "${raw_path}/TUSZ/${.version}"
+  raw: "${root}/TUSZ/${.version}"
   raw_edf: "${.raw}/edf"
   raw_doc: "${.raw}/_DOCS"
 
-  processed: "${processed_path}/TUSZ/"
+  processed: "${root}/TUSZ/processed"
 
   subsets:
     - dev
     - train
+    - eval
 
   excluded_patients:
     dev:
