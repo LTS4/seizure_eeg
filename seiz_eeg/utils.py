@@ -208,12 +208,15 @@ def extract_by_seizures(segments_df: DataFrame[ClipsDF], min_nb_seiz: int) -> Da
     return sessions_by_seizures(segments_df, min_nb_seiz)
 
 
-def extract_target_labels(df: DataFrame[ClipsDF], target_labels: List[int]) -> DataFrame[ClipsDF]:
+def extract_target_labels(
+    df: DataFrame[ClipsDF], target_labels: List[int], relabel: bool = False
+) -> DataFrame[ClipsDF]:
     """Extract rows of :var:`clips_df` whose labels are in :var:`target_labels`
 
     Args:
         df (DataFrame[ClipsDF]): Dataframe of EEG clips
         target_labels (List[int]): List of integer labels to extract
+        relabel(bool): Whether to relabel `target_labels` progressively from 0
 
     Returns:
         DataFrame[ClipsDF]: Subset of :var:`clips_df` with desired labels.
@@ -221,7 +224,8 @@ def extract_target_labels(df: DataFrame[ClipsDF], target_labels: List[int]) -> D
     lmap = {label: i for i, label in enumerate(target_labels)}
 
     df = df.loc[df["label"].isin(target_labels)].copy()
-    df["label"] = df["label"].map(lmap)
+    if relabel:
+        df["label"] = df["label"].map(lmap)
     return df
 
 
