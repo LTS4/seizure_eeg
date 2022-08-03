@@ -84,7 +84,7 @@ def process_walk(
                     )
                 )
 
-        except (IOError, AssertionError) as err:
+        except (IOError, AssertionError, ValueError) as err:
             logger.info(
                 "Excluding file %s wich raises %s: \n\t%s", edf_path, type(err).__name__, err
             )
