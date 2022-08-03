@@ -6,7 +6,7 @@ with open("README.rst", "r", encoding="utf-8") as fh:
 setup(
     name="seiz_eeg",
     packages=find_packages(),
-    version="0.2.1",
+    version="0.2.2",
     description="Data loading and preprocessing of EEG scans for seizure-related ML tasks",
     long_description=long_description,
     long_description_content_type="text/x-rst",
@@ -28,6 +28,7 @@ setup(
     ],
     python_requires=">=3.9",
     install_requires=[
+        "click",
         "numpy",
         "pandas",
         "pandera",
