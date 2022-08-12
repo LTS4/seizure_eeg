@@ -3,8 +3,10 @@ import logging
 from typing import List, Tuple
 
 import numpy as np
+from numpy.typing import NDArray
 from pandera import check_types
 from pandera.typing import DataFrame
+from tqdm import tqdm
 
 from seiz_eeg.constants import EEG_CHANNELS, EEG_MONTAGES
 from seiz_eeg.schemas import ClipsDF
@@ -42,13 +44,13 @@ class EEGDataset:
         self.clip_lenght = lenghts[0] if np.allclose(lenghts, lenghts[0]) else -1
 
         self.s_rate = clips_df[ClipsDF.sampling_rate].unique().item()
-        self._clip_size = int(self.clip_lenght * self.s_rate)
+        self._clip_size = round(self.clip_lenght * self.s_rate)
 
         self.diff_channels = diff_channels
 
         self.output_shape = self._get_output_shape()
 
-    def __getitem__(self, index: int) -> Tuple[np.ndarray, np.ndarray]:
+    def __getitem__(self, index: int) -> Tuple[NDArray[np.float_], NDArray[np.int_]]:
         label, start_time, end_time, _, s_rate, signals_path = self.clips_df.iloc[index]
 
         start_sample = int(start_time * s_rate)
@@ -149,3 +151,26 @@ class EEGFileDataset(EEGDataset):
         y0.unsqueeze_(dim=0)
 
         return X0.shape, y0.shape
+
+
+def to_arrays(data: EEGDataset, pbar=False) -> Tuple[NDArray[np.float_], NDArray[np.int_]]:
+    """Load all signals from :arg:`data` into a tensor.
+
+    Args:
+        data (EEGDataset): Clips dataset.
+            All clips must have the same lenght to be stacked.
+        pbar (bool, optional): Wether toshow a progress bar while loading. Defaults to False.
+
+    Returns:
+        Tuple[NDArray[np.float_], NDArray[np.int_]]: Signals and labels
+    """
+    # return next(iter(DataLoader(data, batch_size=len(data))))
+    if pbar:
+        data = tqdm(data)
+    x, y = zip(*([x, y] for x, y in data))
+    try:
+        x = np.stack(x)
+    except ValueError:
+        pass
+
+    return x, np.stack(y)
