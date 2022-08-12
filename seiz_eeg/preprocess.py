@@ -1,4 +1,6 @@
 """Main interface to preprocess different datasets"""
+import logging
+
 import click
 from omegaconf import OmegaConf
 
@@ -21,6 +23,10 @@ def main(config_path: str):
     """Run preprocessing with options specified in config and cli"""
     config = OmegaConf.load(config_path)
     config.merge_with_cli()
+
+    logging.basicConfig(
+        level=config.get("log_level", logging.INFO),
+    )
 
     if config.dataset == "tusz":
         tusz_main(config)
