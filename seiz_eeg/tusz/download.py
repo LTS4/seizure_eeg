@@ -56,6 +56,7 @@ def download(version: str, target: str, password: str):
         child = pexpect.spawn(
             (
                 "rsync -auxvL "
+                "--exclude 'edf_resampled' "
                 f"nedc@www.isip.piconepress.com:data/eeg/tuh_eeg_seizure/{version}/ "
                 f"{target}"
             ),
