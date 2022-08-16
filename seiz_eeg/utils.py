@@ -9,7 +9,6 @@ from numpy.random import default_rng
 from pandas import IndexSlice as idx
 from pandera.typing import DataFrame
 
-from seiz_eeg.constants import GLOBAL_CHANNEL
 from seiz_eeg.schemas import ClipsDF
 
 
