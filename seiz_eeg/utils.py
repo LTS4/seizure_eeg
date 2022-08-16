@@ -194,19 +194,6 @@ def sessions_by_seizures(segments_df: DataFrame[ClipsDF], min_nb_seiz: int) -> D
     return segments_df.loc[idx[:, sess_to_keep, :], :]
 
 
-def extract_by_seizures(segments_df: DataFrame[ClipsDF], min_nb_seiz: int) -> DataFrame[ClipsDF]:
-    """Extract only sessions with at least :var:`min_nb_seiz`. DEPRECATED.
-
-    See :func:`sessions_by_seizures` for reference.
-    """
-    warn(
-        "`extract_by_seizures` is deprecated and will be removed, use `sessions_by_seizures` instead",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return sessions_by_seizures(segments_df, min_nb_seiz)
-
-
 def extract_target_labels(
     df: DataFrame[ClipsDF], target_labels: List[int], relabel: bool = False
 ) -> DataFrame[ClipsDF]:
