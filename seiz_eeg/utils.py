@@ -147,6 +147,10 @@ def patient_split(
     return selected
 
 
+################################################################################
+# NUMBER OF SEIZURES ###########################################################
+
+
 def patients_by_seizures(
     segments_df: DataFrame[ClipsDF], min_nb_seiz: int, total=False
 ) -> DataFrame[ClipsDF]:
@@ -194,6 +198,10 @@ def sessions_by_seizures(segments_df: DataFrame[ClipsDF], min_nb_seiz: int) -> D
     return segments_df.loc[idx[:, sess_to_keep, :], :]
 
 
+################################################################################
+# LABELS FILTERING #############################################################
+
+
 def extract_target_labels(
     df: DataFrame[ClipsDF], target_labels: List[int], relabel: bool = False
 ) -> DataFrame[ClipsDF]:
@@ -207,10 +215,15 @@ def extract_target_labels(
     return segments_by_labels(df, target_labels, relabel)
 
 
+def _relabel(df: DataFrame[ClipsDF], target_labels: List[int]) -> DataFrame[ClipsDF]:
+    lmap = {label: i for i, label in enumerate(target_labels)}
+    return df["label"].map(lmap)
+
+
 def segments_by_labels(
     df: DataFrame[ClipsDF], target_labels: List[int], relabel: bool = False
 ) -> DataFrame[ClipsDF]:
-    """Extract rows of :var:`clips_df` whose labels are in :var:`target_labels`
+    """Extract rows of :var:`df` whose labels are in :var:`target_labels`
 
     Args:
         df (DataFrame[ClipsDF]): Dataframe of EEG clips
@@ -218,13 +231,33 @@ def segments_by_labels(
         relabel(bool): Whether to relabel `target_labels` progressively from 0
 
     Returns:
-        DataFrame[ClipsDF]: Subset of :var:`clips_df` with desired labels.
+        DataFrame[ClipsDF]: Subset of :var:`df` with desired labels.
     """
-    lmap = {label: i for i, label in enumerate(target_labels)}
 
     df = df.loc[df["label"].isin(target_labels)].copy()
     if relabel:
-        df["label"] = df["label"].map(lmap)
+        df = _relabel(df, target_labels)
+    return df
+
+
+def sessions_by_labels(
+    df: DataFrame[ClipsDF], target_labels: List[int], relabel: bool = False
+) -> DataFrame[ClipsDF]:
+    """Extract sessions of :var:`df` whose labels are in :var:`target_labels`
+
+    Args:
+        df (DataFrame[ClipsDF]): Dataframe of EEG clips
+        target_labels (List[int]): List of integer labels to extract
+        relabel(bool): Whether to relabel `target_labels` progressively from 0
+
+    Returns:
+        DataFrame[ClipsDF]: Subset of :var:`df` with desired labels.
+    """
+    label_sets = df.groupby(ClipsDF.session)[ClipsDF.label].apply(set)
+    sessions = label_sets.index[label_sets <= set(target_labels)]
+    df = df.loc[idx[:, sessions, :]]
+    if relabel:
+        df = _relabel(df, target_labels)
     return df
 
 
