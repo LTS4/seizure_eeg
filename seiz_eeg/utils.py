@@ -197,6 +197,19 @@ def sessions_by_seizures(segments_df: DataFrame[ClipsDF], min_nb_seiz: int) -> D
 def extract_target_labels(
     df: DataFrame[ClipsDF], target_labels: List[int], relabel: bool = False
 ) -> DataFrame[ClipsDF]:
+    """Old name of :func:`segments_by_labels`. DEPRECATED"""
+    warn(
+        "`extract_target_labels` is deprecated and will be removed"
+        ", use `segments_by_labels` instead",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return segments_by_labels(df, target_labels, relabel)
+
+
+def segments_by_labels(
+    df: DataFrame[ClipsDF], target_labels: List[int], relabel: bool = False
+) -> DataFrame[ClipsDF]:
     """Extract rows of :var:`clips_df` whose labels are in :var:`target_labels`
 
     Args:
