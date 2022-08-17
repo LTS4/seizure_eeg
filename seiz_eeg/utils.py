@@ -9,7 +9,6 @@ from numpy.random import default_rng
 from pandas import IndexSlice as idx
 from pandera.typing import DataFrame
 
-from seiz_eeg.constants import GLOBAL_CHANNEL
 from seiz_eeg.schemas import ClipsDF
 
 
@@ -148,6 +147,10 @@ def patient_split(
     return selected
 
 
+################################################################################
+# NUMBER OF SEIZURES ###########################################################
+
+
 def patients_by_seizures(
     segments_df: DataFrame[ClipsDF], min_nb_seiz: int, total=False
 ) -> DataFrame[ClipsDF]:
@@ -195,23 +198,32 @@ def sessions_by_seizures(segments_df: DataFrame[ClipsDF], min_nb_seiz: int) -> D
     return segments_df.loc[idx[:, sess_to_keep, :], :]
 
 
-def extract_by_seizures(segments_df: DataFrame[ClipsDF], min_nb_seiz: int) -> DataFrame[ClipsDF]:
-    """Extract only sessions with at least :var:`min_nb_seiz`. DEPRECATED.
-
-    See :func:`sessions_by_seizures` for reference.
-    """
-    warn(
-        "`extract_by_seizures` is deprecated and will be removed, use `sessions_by_seizures` instead",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return sessions_by_seizures(segments_df, min_nb_seiz)
+################################################################################
+# LABELS FILTERING #############################################################
 
 
 def extract_target_labels(
     df: DataFrame[ClipsDF], target_labels: List[int], relabel: bool = False
 ) -> DataFrame[ClipsDF]:
-    """Extract rows of :var:`clips_df` whose labels are in :var:`target_labels`
+    """Old name of :func:`segments_by_labels`. DEPRECATED"""
+    warn(
+        "`extract_target_labels` is deprecated and will be removed"
+        ", use `segments_by_labels` instead",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return segments_by_labels(df, target_labels, relabel)
+
+
+def _relabel(df: DataFrame[ClipsDF], target_labels: List[int]) -> DataFrame[ClipsDF]:
+    lmap = {label: i for i, label in enumerate(target_labels)}
+    return df["label"].map(lmap)
+
+
+def segments_by_labels(
+    df: DataFrame[ClipsDF], target_labels: List[int], relabel: bool = False
+) -> DataFrame[ClipsDF]:
+    """Extract rows of :var:`df` whose labels are in :var:`target_labels`
 
     Args:
         df (DataFrame[ClipsDF]): Dataframe of EEG clips
@@ -219,13 +231,33 @@ def extract_target_labels(
         relabel(bool): Whether to relabel `target_labels` progressively from 0
 
     Returns:
-        DataFrame[ClipsDF]: Subset of :var:`clips_df` with desired labels.
+        DataFrame[ClipsDF]: Subset of :var:`df` with desired labels.
     """
-    lmap = {label: i for i, label in enumerate(target_labels)}
 
     df = df.loc[df["label"].isin(target_labels)].copy()
     if relabel:
-        df["label"] = df["label"].map(lmap)
+        df = _relabel(df, target_labels)
+    return df
+
+
+def sessions_by_labels(
+    df: DataFrame[ClipsDF], target_labels: List[int], relabel: bool = False
+) -> DataFrame[ClipsDF]:
+    """Extract sessions of :var:`df` whose labels are in :var:`target_labels`
+
+    Args:
+        df (DataFrame[ClipsDF]): Dataframe of EEG clips
+        target_labels (List[int]): List of integer labels to extract
+        relabel(bool): Whether to relabel `target_labels` progressively from 0
+
+    Returns:
+        DataFrame[ClipsDF]: Subset of :var:`df` with desired labels.
+    """
+    label_sets = df.groupby(ClipsDF.session)[ClipsDF.label].apply(set)
+    sessions = label_sets.index[label_sets <= set(target_labels)]
+    df = df.loc[idx[:, sessions, :]]
+    if relabel:
+        df = _relabel(df, target_labels)
     return df
 
 
