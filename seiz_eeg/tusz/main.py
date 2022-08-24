@@ -23,6 +23,8 @@ def main(cfg: DataConf):
     raw_edf_folder = Path(cfg.tusz.raw_edf)
     output_folder = Path(cfg.tusz.processed)
 
+    raw_edf_folder.mkdir(parents=True, exist_ok=True)
+
     # Download data if missing folders
     if cfg.tusz.force_download or (
         not set(cfg.tusz.subsets) <= {x.stem for x in raw_edf_folder.iterdir()}
