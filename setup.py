@@ -13,9 +13,9 @@ setup(
     author="William Cappelletti",
     author_email="william.cappelletti@epfl.ch",
     license="BSD-3",
-    url="https://github.com/WilliamCappelletti/seizure_eeg",
+    url="https://github.com/LTS4/seizure_eeg",
     project_urls={
-        "Bug Tracker": "https://github.com/WilliamCappelletti/seizure_eeg/issues",
+        "Bug Tracker": "https://github.com/LTS4/seizure_eeg/issues",
     },
     classifiers=[
         "Programming Language :: Python :: 3",
