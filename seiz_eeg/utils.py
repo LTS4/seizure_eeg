@@ -152,25 +152,30 @@ def patient_split(
 
 
 def patients_by_seizures(
-    segments_df: DataFrame[ClipsDF], min_nb_seiz: int, total=False
+    segments_df: DataFrame[ClipsDF], low: int = 0, high: int = np.inf, total=False
 ) -> DataFrame[ClipsDF]:
-    """Filter patients to have at least :var:`min_nb_seiz`.
+    """Filter patients to have a number of seizures between low and high
 
     Args:
         segments_df (DataFrame[ClipsDF]): Segments annotation dataframe
-        min_nb_seiz (int): Minumum number of seizures per patient (inclusive)
+        min_nb_seiz (int, optinal): Minumum number of seizures per patient
+            (inclusive). Defaults to 0.
+        max_nb_seiz (int, optinal): Maximum number of seizures per patient
+            (inclusive). Defaults to infinity.
         total (bool, optional): Wether to aggregate all kind of seizures in the
             count. Defaults to False.
 
     Returns:
-        DataFrame[ClipsDF]: _description_
+        DataFrame[ClipsDF]: Filtered dataframe
     """
-    if min_nb_seiz <= 0:
+    if low <= 0 and high == np.inf:
         return segments_df
+    if high < low:
+        raise ValueError(f"Low bound must be greater or equal to high, got {high} < {low}")
 
     if total:
         counts = segments_df.loc[segments_df.label.ne(0)].groupby(ClipsDF.patient).size()
-        return segments_df.loc[counts.index[counts > min_nb_seiz]].copy()
+        return segments_df.loc[counts.index[counts.between(low, high)]].copy()
     else:
         counts = (
             segments_df.loc[segments_df.label.ne(0)]
@@ -178,10 +183,14 @@ def patients_by_seizures(
             .value_counts()
         )
 
-        return segments_df.loc[counts.index[counts > 5].get_level_values(ClipsDF.patient).unique()]
+        return segments_df.loc[
+            counts.index[counts.between(low, high)].get_level_values(ClipsDF.patient).unique()
+        ]
 
 
-def sessions_by_seizures(segments_df: DataFrame[ClipsDF], min_nb_seiz: int) -> DataFrame[ClipsDF]:
+def sessions_by_seizures(
+    segments_df: DataFrame[ClipsDF], low: int = 0, high: int = np.inf
+) -> DataFrame[ClipsDF]:
     """Extract only sessions with at least :var:`min_nb_seiz`.
 
     Args:
@@ -191,9 +200,13 @@ def sessions_by_seizures(segments_df: DataFrame[ClipsDF], min_nb_seiz: int) -> D
     Returns:
         DataFrame[ClipsDF]: Annotation dataframe with only requested sessions
     """
+    if low <= 0 and high == np.inf:
+        return segments_df
+    if high < low:
+        raise ValueError(f"Low bound must be greater or equal to high, got {high} < {low}")
 
     sess_sizes = segments_df[segments_df[ClipsDF.label] > 0].groupby(ClipsDF.session).size()
-    sess_to_keep = sess_sizes[sess_sizes >= min_nb_seiz].index.to_list()
+    sess_to_keep = sess_sizes[sess_sizes.between(low, high)].index.to_list()
 
     return segments_df.loc[idx[:, sess_to_keep, :], :]
 
