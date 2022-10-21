@@ -84,7 +84,7 @@ class EEGDataset:
         return self.signal_transform(signals), self.label_transform(label)
 
     def get_label_array(self) -> np.ndarray:
-        return self.clips_df[ClipsDF.label].values
+        return self.clips_df[ClipsDF.label].map(self.label_transform).values
 
     def get_channels_names(self) -> List[str]:
         if self.diff_channels:
@@ -122,9 +122,6 @@ class EEGFileDataset(EEGDataset):
 
         self._split_clips = SplitWindows(self._clip_size)
 
-    def _getclip(self, index: int) -> Tuple[np.ndarray, np.ndarray]:
-        return super().__getitem__(index)
-
     def __len__(self) -> int:
         return len(self.session_ids)
 
@@ -136,7 +133,7 @@ class EEGFileDataset(EEGDataset):
         clip_indices = session.index.get_level_values(ClipsDF.segment)
         nb_clips = clip_indices.max() + 1
 
-        labels = session[ClipsDF.label].values
+        labels = session[ClipsDF.label].map(self.label_transform).values
 
         end_time, signals_path = session.iloc[-1][[ClipsDF.end_time, ClipsDF.signals_path]]
 
@@ -156,7 +153,10 @@ class EEGFileDataset(EEGDataset):
         # 3. Clip and keep only labelled ones
         signals = self._split_clips(signals)[clip_indices]
 
-        return signals, labels
+        return self.signal_transform(signals), labels
+
+    def _getclip(self, index: int) -> Tuple[np.ndarray, np.ndarray]:
+        return super().__getitem__(index)
 
     def _get_output_shape(self) -> Tuple[tuple, tuple]:
         X0, y0 = self._getclip(0)
