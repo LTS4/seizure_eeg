@@ -35,6 +35,10 @@ class EEGDataset:
 
         Args:
             clips_df (DataFrame[ClipsDF]): Pandas dataframe of EEG clips annotations
+            signal_transform (Callable[[NDArray[np.float_]], NDArray | Any], optional):
+                Function to transform signals before they are returned. Defaults to None.
+            label_transform (Callable[[int], Any], optional): Function to
+                transform labels before they are returned. Defaults to None.
             diff_channels (bool, optional): Whether to use channel differences
                 or not. Defaults to False.
             seed (int, optional): Random seed. Defaults to None.
