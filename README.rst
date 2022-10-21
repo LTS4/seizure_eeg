@@ -20,11 +20,11 @@ Installation
 The code can be pip-installed directly from git, if you have proper
 authentication. Just run::
 
-    pip install git+ssh://git@github.com/WilliamCappelletti/seizure_eeg.git
+    pip install git+ssh://git@github.com/LTS4/seizure_eeg.git
 
 Otherwise, you can clone the repository and pip install it::
 
-    git clone git@github.com:WilliamCappelletti/seizure_eeg.git
+    git clone git@github.com:LTS4/seizure_eeg.git
     cd seizure_eeg
     pip install seizure_eeg
 
@@ -193,7 +193,7 @@ The config file and the dataclasses should provide the following parameters:
 .. _OmegaConf: https://omegaconf.readthedocs.io/en/latest/
 
 .. |config| replace:: ``config.yaml``
-.. _config: https://github.com/WilliamCappelletti/seizure_eeg/blob/main/config.yaml
+.. _config: https://github.com/LTS4/seizure_eeg/blob/main/config.yaml
 
 Code structure
 ================================================================================
