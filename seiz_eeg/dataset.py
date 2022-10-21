@@ -1,6 +1,6 @@
 """EEG Data class with common data retrieval"""
 import logging
-from typing import List, Tuple
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 import numpy as np
 from numpy.typing import NDArray
@@ -15,6 +15,10 @@ from seiz_eeg.tusz.signals.io import read_parquet
 from seiz_eeg.tusz.signals.process import get_diff_signals
 
 
+def _identity(x):
+    return x
+
+
 class EEGDataset:
     """Dataset of EEG clips with seizure labels"""
 
@@ -23,6 +27,8 @@ class EEGDataset:
         self,
         clips_df: DataFrame[ClipsDF],
         *,
+        signal_transform: Optional[Callable[[NDArray[np.float_]], Union[NDArray, Any]]] = None,
+        label_transform: Optional[Callable[[int], Any]] = None,
         diff_channels: bool = False,
     ) -> None:
         """Dataset of EEG clips with seizure labels
@@ -48,6 +54,9 @@ class EEGDataset:
 
         self.diff_channels = diff_channels
 
+        self.signal_transform = signal_transform or _identity
+        self.label_transform = label_transform or _identity
+
         self.output_shape = self._get_output_shape()
 
     def __getitem__(self, index: int) -> Tuple[NDArray[np.float_], NDArray[np.int_]]:
@@ -72,7 +81,7 @@ class EEGDataset:
         else:
             signals = signals.values
 
-        return signals, label
+        return self.signal_transform(signals), self.label_transform(label)
 
     def get_label_array(self) -> np.ndarray:
         return self.clips_df[ClipsDF.label].values
