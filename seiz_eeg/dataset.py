@@ -107,10 +107,14 @@ class EEGFileDataset(EEGDataset):
         self,
         clips_df: DataFrame[ClipsDF],
         *,
+        signal_transform: Optional[Callable[[NDArray[np.float_]], Union[NDArray, Any]]] = None,
+        label_transform: Optional[Callable[[int], Any]] = None,
         diff_channels: bool = False,
     ) -> None:
         super().__init__(
             clips_df,
+            signal_transform=signal_transform,
+            label_transform=label_transform,
             diff_channels=diff_channels,
         )
 
