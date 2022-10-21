@@ -1,6 +1,6 @@
 """EEG Data class with common data retrieval"""
 import logging
-from typing import List, Tuple
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 import numpy as np
 from numpy.typing import NDArray
@@ -15,6 +15,10 @@ from seiz_eeg.tusz.signals.io import read_parquet
 from seiz_eeg.tusz.signals.process import get_diff_signals
 
 
+def _identity(x):
+    return x
+
+
 class EEGDataset:
     """Dataset of EEG clips with seizure labels"""
 
@@ -23,6 +27,8 @@ class EEGDataset:
         self,
         clips_df: DataFrame[ClipsDF],
         *,
+        signal_transform: Optional[Callable[[NDArray[np.float_]], Union[NDArray, Any]]] = None,
+        label_transform: Optional[Callable[[int], Any]] = None,
         diff_channels: bool = False,
     ) -> None:
         """Dataset of EEG clips with seizure labels
@@ -48,6 +54,9 @@ class EEGDataset:
 
         self.diff_channels = diff_channels
 
+        self.signal_transform = signal_transform or _identity
+        self.label_transform = label_transform or _identity
+
         self.output_shape = self._get_output_shape()
 
     def __getitem__(self, index: int) -> Tuple[NDArray[np.float_], NDArray[np.int_]]:
@@ -72,10 +81,10 @@ class EEGDataset:
         else:
             signals = signals.values
 
-        return signals, label
+        return self.signal_transform(signals), self.label_transform(label)
 
     def get_label_array(self) -> np.ndarray:
-        return self.clips_df[ClipsDF.label].values
+        return self.clips_df[ClipsDF.label].map(self.label_transform).values
 
     def get_channels_names(self) -> List[str]:
         if self.diff_channels:
@@ -98,19 +107,20 @@ class EEGFileDataset(EEGDataset):
         self,
         clips_df: DataFrame[ClipsDF],
         *,
+        signal_transform: Optional[Callable[[NDArray[np.float_]], Union[NDArray, Any]]] = None,
+        label_transform: Optional[Callable[[int], Any]] = None,
         diff_channels: bool = False,
     ) -> None:
         super().__init__(
             clips_df,
+            signal_transform=signal_transform,
+            label_transform=label_transform,
             diff_channels=diff_channels,
         )
 
         self.session_ids = self.clips_df.index.unique(level="session")
 
         self._split_clips = SplitWindows(self._clip_size)
-
-    def _getclip(self, index: int) -> Tuple[np.ndarray, np.ndarray]:
-        return super().__getitem__(index)
 
     def __len__(self) -> int:
         return len(self.session_ids)
@@ -123,7 +133,7 @@ class EEGFileDataset(EEGDataset):
         clip_indices = session.index.get_level_values(ClipsDF.segment)
         nb_clips = clip_indices.max() + 1
 
-        labels = session[ClipsDF.label].values
+        labels = session[ClipsDF.label].map(self.label_transform).values
 
         end_time, signals_path = session.iloc[-1][[ClipsDF.end_time, ClipsDF.signals_path]]
 
@@ -143,7 +153,10 @@ class EEGFileDataset(EEGDataset):
         # 3. Clip and keep only labelled ones
         signals = self._split_clips(signals)[clip_indices]
 
-        return signals, labels
+        return self.signal_transform(signals), labels
+
+    def _getclip(self, index: int) -> Tuple[np.ndarray, np.ndarray]:
+        return super().__getitem__(index)
 
     def _get_output_shape(self) -> Tuple[tuple, tuple]:
         X0, y0 = self._getclip(0)

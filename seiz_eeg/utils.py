@@ -205,8 +205,19 @@ def sessions_by_seizures(
     if high < low:
         raise ValueError(f"Low bound must be greater or equal to high, got {high} < {low}")
 
-    sess_sizes = segments_df[segments_df[ClipsDF.label] > 0].groupby(ClipsDF.session).size()
-    sess_to_keep = sess_sizes[sess_sizes.between(low, high)].index.to_list()
+    if low == 0:
+        # Keep sessions with no seizures, i.e. with only one bkgd segment
+        num_segments = (
+            segments_df.reset_index(level=ClipsDF.segment)[ClipsDF.segment]
+            .groupby(ClipsDF.session)
+            .max()
+        )
+        sess_to_keep = num_segments[num_segments == 0].index.to_list()
+    else:
+        sess_to_keep = []
+
+    num_seiz = segments_df[segments_df[ClipsDF.label] > 0].groupby(ClipsDF.session).size()
+    sess_to_keep += num_seiz[num_seiz.between(low, high)].index.to_list()
 
     return segments_df.loc[idx[:, sess_to_keep, :], :]
 
