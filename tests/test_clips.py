@@ -36,10 +36,10 @@ class TestMakeClips:
     """tests for :func:`make_clips`"""
 
     def test_negative_length_int(self, segments_df: pd.DataFrame):
-        assert segments_df.sort_index().equals(make_clips(segments_df, -1, ...))
+        assert segments_df.sort_index().equals(make_clips(segments_df, -1, ..., sort_index=True))
 
     def test_negative_length_float(self, segments_df: pd.DataFrame):
-        assert segments_df.sort_index().equals(make_clips(segments_df, -0.5, ...))
+        assert segments_df.sort_index().equals(make_clips(segments_df, -0.5, ..., sort_index=True))
 
     def test_lenght_equals_input(self, segments_df: pd.DataFrame, clip_length, clip_stride):
         clips_df = make_clips(segments_df, clip_length, clip_stride)
