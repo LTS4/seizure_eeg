@@ -25,15 +25,17 @@ def _get_mask(
         if overlap_action == "right":
             left_mask = np.zeros_like(inner_mask)
         else:
-            left_mask = (clip_start <= start_times) & (start_times <= clip_end)
+            # Identify segments which overlap with the clip start
+            left_mask = (start_times <= clip_start) & (clip_start < end_times)
 
         if overlap_action == "left":
             right_mask = np.zeros_like(inner_mask)
         else:
-            right_mask = (start_times <= clip_end) & (clip_end <= end_times)
+            # Identify segments which overlap with the clip end
+            right_mask = (start_times < clip_end) & (clip_end <= end_times)
 
         if overlap_action not in ("right", "left"):
-            outer_mask = (clip_start <= start_times) & (end_times <= clip_end)
+            outer_mask = (clip_start < start_times) & (end_times < clip_end)
         else:
             outer_mask = np.zeros_like(inner_mask)
 
@@ -64,7 +66,10 @@ def _handle_overlaps(
             # Clip sizes should be small enough to avoid multiple overlaps.
             seiz_labels = copy_vals.loc[duplicated].groupby(index_names)[ClipsDF.label].max()
             copy_vals = copy_vals.set_index(index_names)
-            copy_vals.update(seiz_labels)
+
+            # copy_vals.update(seiz_labels)
+            copy_vals.loc[seiz_labels.index, ClipsDF.label] = seiz_labels
+
             copy_vals = copy_vals.reset_index()
         elif overlap_action == "bkgd":
             copy_vals.loc[duplicated, ClipsDF.label] = 0
@@ -95,6 +100,8 @@ def _make_clips_float_stride(
             f"Invalid overlap_action: got {overlap_action}, must be in {SUPPORTED_OVERLAP_ACTION}"
         )
 
+    max_times = segments_df.groupby(level=[ClipsDF.patient, ClipsDF.session]).end_time.max()
+
     index_names = segments_df.index.names
     segments_df = segments_df.reset_index()
 
@@ -116,13 +123,21 @@ def _make_clips_float_stride(
             _get_mask(start_times, end_times, clip_start, clip_end, overlap_action)
         ].copy()
 
-        copy_vals[[ClipsDF.segment, ClipsDF.start_time, ClipsDF.end_time]] = (
-            clip_idx,
-            clip_start,
-            clip_end,
-        )
+        if len(copy_vals) > 0:
+            copy_vals[[ClipsDF.segment, ClipsDF.start_time, ClipsDF.end_time]] = (
+                clip_idx,
+                clip_start,
+                clip_end,
+            )
 
-        out_list.append(_handle_overlaps(copy_vals, index_names, overlap_action))
+            # We only keep the segments finishing before the end of the session
+            copy_vals = copy_vals.loc[
+                copy_vals.apply(
+                    lambda row: row.end_time <= max_times.loc[row.patient, row.session], axis=1
+                )
+            ]
+
+            out_list.append(_handle_overlaps(copy_vals, index_names, overlap_action))
 
     return pd.concat(out_list, ignore_index=True, copy=False).set_index(index_names)
 
@@ -244,30 +259,30 @@ def make_clips(
         DataFrame[ClipsDF]: Clips dataframe
     """
     if clip_length < 0:
-        return segments_df.sort_index()
-
-    if isinstance(clip_stride, (int, float)):
-        clips = _make_clips_float_stride(segments_df, clip_length, clip_stride, overlap_action)
-    elif isinstance(clip_stride, str):
-        if clip_stride == "start":
-            clips = _make_clips_start(segments_df, clip_length)
-        elif clip_stride == "pre-ictal":
-            clips = _make_clips_preictal(segments_df, clip_length)
-        elif clip_stride == "random":
-            clips = _make_clips_random(segments_df, clip_length)
-        else:
-            raise ValueError(f"Invalid clip_stride, got {clip_stride}")
-    elif isinstance(clip_stride, tuple):
-        stride_name, *args = clip_stride
-
-        if stride_name == "pre-ictal":
-            clips = _make_clips_preictal(segments_df, clip_length, *args)
-        elif stride_name == "random":
-            clips = _make_clips_random(segments_df, clip_length, *args)
-        else:
-            raise ValueError(f"Invalid key in clip_stride, got {stride_name}")
+        clips = segments_df
     else:
-        raise ValueError(f"Invalid clip_stride type, got {type(clip_stride)}")
+        if isinstance(clip_stride, (int, float)):
+            clips = _make_clips_float_stride(segments_df, clip_length, clip_stride, overlap_action)
+        elif isinstance(clip_stride, str):
+            if clip_stride == "start":
+                clips = _make_clips_start(segments_df, clip_length)
+            elif clip_stride == "pre-ictal":
+                clips = _make_clips_preictal(segments_df, clip_length)
+            elif clip_stride == "random":
+                clips = _make_clips_random(segments_df, clip_length)
+            else:
+                raise ValueError(f"Invalid clip_stride, got {clip_stride}")
+        elif isinstance(clip_stride, tuple):
+            stride_name, *args = clip_stride
+
+            if stride_name == "pre-ictal":
+                clips = _make_clips_preictal(segments_df, clip_length, *args)
+            elif stride_name == "random":
+                clips = _make_clips_random(segments_df, clip_length, *args)
+            else:
+                raise ValueError(f"Invalid key in clip_stride, got {stride_name}")
+        else:
+            raise ValueError(f"Invalid clip_stride type, got {type(clip_stride)}")
 
     if sort_index:
         # Sorting indices requires ~70% of the time spent in this function
