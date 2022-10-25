@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from pandas import IndexSlice as idx
+from pandera.typing import DataFrame
 
 from seiz_eeg.clips import make_clips
 from seiz_eeg.schemas import ClipsDF
@@ -13,7 +14,7 @@ _PRIMES = [19, 23, 29, 31, 37]
 
 
 @pytest.fixture
-def segments_df():
+def segments_df() -> DataFrame[ClipsDF]:
     """Create sample dataset"""
     schema = ClipsDF.to_schema()
     columns = list(schema.columns.keys())
@@ -43,7 +44,9 @@ def segments_df():
         signals_path="/path/to/signals",
     )
 
-    return test_df.astype({key: value.dtype.type for key, value in schema.columns.items()})
+    return test_df.astype(
+        {key: value.dtype.type for key, value in schema.columns.items()}
+    ).sort_index()
 
 
 @pytest.fixture(params=[5, 15, 30], ids=type)
@@ -62,16 +65,21 @@ def clips_df_start_stride(segments_df):
     return make_clips(segments_df, clip_length=min_len, clip_stride="start")
 
 
+@pytest.fixture(params=["ignore", "left", "right", "seizure", "bkgd"], ids=type)
+def overlap_action(request):
+    return request.param
+
+
 class TestMakeClips:
     """tests for :func:`make_clips`"""
 
-    def test_negative_length_int(self, segments_df: pd.DataFrame):
+    def test_negative_length_int(self, segments_df: DataFrame[ClipsDF]):
         assert segments_df.sort_index().equals(make_clips(segments_df, -1, ..., sort_index=True))
 
-    def test_negative_length_float(self, segments_df: pd.DataFrame):
+    def test_negative_length_float(self, segments_df: DataFrame[ClipsDF]):
         assert segments_df.sort_index().equals(make_clips(segments_df, -0.5, ..., sort_index=True))
 
-    def test_lenght_equals_input(self, segments_df: pd.DataFrame, clip_length, clip_stride):
+    def test_lenght_equals_input(self, segments_df: DataFrame[ClipsDF], clip_length, clip_stride):
         clips_df = make_clips(segments_df, clip_length, clip_stride)
 
         assert np.allclose(clips_df[ClipsDF.end_time] - clips_df[ClipsDF.start_time], clip_length)
@@ -102,31 +110,84 @@ class TestMakeClips:
             segments_df[ClipsDF.start_time].sort_index(),
         )
 
-    def test_overlap_ignore(self, segments_df: pd.DataFrame, clip_length: float):
+    def test_overlap_do_not_overflow(
+        self, segments_df: DataFrame[ClipsDF], clip_length: float, overlap_action: str
+    ):
+        clips_df = make_clips(
+            segments_df,
+            clip_length=clip_length,
+            clip_stride=clip_length,
+            overlap_action=overlap_action,
+            sort_index=True,
+        )
+
+        for (pat, sess), clips_g in clips_df.groupby(level=["patient", "session"]):
+            assert (
+                clips_g[ClipsDF.end_time].max()
+                <= segments_df.loc[idx[pat, sess, :], ClipsDF.end_time].max()
+            )
+
+    def test_overlap_ignore(self, segments_df: DataFrame[ClipsDF], clip_length: float):
         clips_df = make_clips(
             segments_df, clip_length=clip_length, clip_stride=clip_length, overlap_action="ignore"
         )
 
-        # If the session is not in the index, it means no clip is taken from there
-        start_excl = [
-            ~np.any(
-                sess in clips_df.index.get_level_values(level="session")
-                and (
-                    (clips_df.loc[idx[pat, sess, :], ClipsDF.start_time] < start_time)
-                    & (start_time < clips_df.loc[idx[pat, sess, :], ClipsDF.end_time])
-                )
-            )
-            for (pat, sess, _seg), start_time in segments_df.start_time.items()
-        ]
-        end_excl = [
-            ~np.any(
-                sess in clips_df.index.get_level_values(level="session")
-                and (
-                    (clips_df.loc[idx[pat, sess, :], ClipsDF.start_time] < end_time)
-                    & (end_time < clips_df.loc[idx[pat, sess, :], ClipsDF.end_time])
-                )
-            )
-            for (pat, sess, _seg), end_time in segments_df.end_time.items()
-        ]
+        for (pat, sess, _seg), _label, start_time, end_time, *_ in segments_df.itertuples():
+            # If the session is not in the index, it means no clip is taken from there
+            if sess in clips_df.index.get_level_values(ClipsDF.session):
+                local = clips_df.loc[pat, sess]
 
-        assert np.all(start_excl) and np.all(end_excl)
+                assert ~np.any((local.start_time < start_time) & (start_time < local.end_time))
+                assert ~np.any((local.start_time < end_time) & (end_time < local.end_time))
+
+    def test_overlap_left(self, segments_df: DataFrame[ClipsDF], clip_length: float):
+        clips_df = make_clips(
+            segments_df, clip_length=clip_length, clip_stride=clip_length, overlap_action="left"
+        )
+
+        for (pat, sess, _seg), label, _start_time, end_time, *_ in segments_df.itertuples():
+            if sess in clips_df.index.get_level_values(ClipsDF.session):
+                local = clips_df.loc[pat, sess]
+                mask = (local.start_time < end_time) & (end_time <= local.end_time)
+
+                assert local.loc[mask, ClipsDF.label].item() == label
+
+    def test_overlap_right(self, segments_df: DataFrame[ClipsDF], clip_length: float):
+        clips_df = make_clips(
+            segments_df, clip_length=clip_length, clip_stride=clip_length, overlap_action="right"
+        )
+
+        for (pat, sess, _seg), label, start_time, _end_time, *_ in segments_df.itertuples():
+            # We canno toverlap 0, so we skip it
+            if sess in clips_df.index.get_level_values(ClipsDF.session) and start_time > 0:
+                local = clips_df.loc[pat, sess]
+                mask = (local.start_time < start_time) & (start_time < local.end_time)
+
+                assert local.loc[mask, ClipsDF.label].item() == label
+
+    def test_overlap_seiz_or_bkgd(self, segments_df: DataFrame[ClipsDF], clip_length: float):
+        clips_bkgd = make_clips(
+            segments_df, clip_length=clip_length, clip_stride=clip_length, overlap_action="bkgd"
+        )
+
+        clips_seiz = make_clips(
+            segments_df, clip_length=clip_length, clip_stride=clip_length, overlap_action="seizure"
+        )
+
+        for (pat, sess, _seg), _label, start_time, end_time, *_ in segments_df.itertuples():
+            # We canno toverlap 0, so we skip it
+            if sess in clips_bkgd.index.get_level_values(ClipsDF.session) and start_time > 0:
+                local = clips_bkgd.loc[pat, sess]
+                mask = (local.start_time < start_time) & (start_time < local.end_time) or (
+                    (local.start_time < end_time) & (end_time < local.end_time)
+                )
+
+                assert local.loc[mask, ClipsDF.label].item() == 0
+
+            if sess in clips_seiz.index.get_level_values(ClipsDF.session) and start_time > 0:
+                local = clips_seiz.loc[pat, sess]
+                mask = (local.start_time < start_time) & (start_time < local.end_time) or (
+                    (local.start_time < end_time) & (end_time < local.end_time)
+                )
+
+                assert local.loc[mask, ClipsDF.label].item() > 0
