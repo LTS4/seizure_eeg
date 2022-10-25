@@ -4,24 +4,54 @@
 import numpy as np
 import pandas as pd
 import pytest
+from pandas import IndexSlice as idx
 
 from seiz_eeg.clips import make_clips
 from seiz_eeg.schemas import ClipsDF
 
+_PRIMES = [19, 23, 29, 31, 37]
+
 
 @pytest.fixture
 def segments_df():
-    return pd.read_parquet(
-        "/home/cappelle/seizure_learning/data/processed/TUSZ/dev/segments.parquet"
+    """Create sample dataset"""
+    schema = ClipsDF.to_schema()
+    columns = list(schema.columns.keys())
+    index = list(schema.index.columns.keys())
+    test_df = pd.DataFrame(columns=index + columns).set_index(index)
+
+    start = 0.0
+    end = 0.0
+    for i, prime in enumerate(_PRIMES):
+        end = start + prime
+        test_df.loc["00000000", "00000000_s001_t000", i] = dict(
+            label=i % 2,
+            start_time=start,
+            end_time=end,
+            date="2022-10-25",
+            sampling_rate=250,
+            signals_path="/path/to/signals",
+        )
+        start = end
+
+    test_df.loc["00000001", "00000001_s001_t000", 0] = dict(
+        label=0,
+        start_time=0,
+        end_time=42,
+        date="2022-10-25",
+        sampling_rate=250,
+        signals_path="/path/to/signals",
     )
 
+    return test_df.astype({key: value.dtype.type for key, value in schema.columns.items()})
 
-@pytest.fixture(params=[60, 33.3], ids=type)
+
+@pytest.fixture(params=[5, 15, 30], ids=type)
 def clip_length(request):
     return request.param
 
 
-@pytest.fixture(params=[60, 55.5, "start"], ids=type)
+@pytest.fixture(params=[5, 15, "start"], ids=type)
 def clip_stride(request):
     return request.param
 
@@ -71,3 +101,32 @@ class TestMakeClips:
             clips_df_start_stride[ClipsDF.start_time].sort_index(),
             segments_df[ClipsDF.start_time].sort_index(),
         )
+
+    def test_overlap_ignore(self, segments_df: pd.DataFrame, clip_length: float):
+        clips_df = make_clips(
+            segments_df, clip_length=clip_length, clip_stride=clip_length, overlap_action="ignore"
+        )
+
+        # If the session is not in the index, it means no clip is taken from there
+        start_excl = [
+            ~np.any(
+                sess in clips_df.index.get_level_values(level="session")
+                and (
+                    (clips_df.loc[idx[pat, sess, :], ClipsDF.start_time] < start_time)
+                    & (start_time < clips_df.loc[idx[pat, sess, :], ClipsDF.end_time])
+                )
+            )
+            for (pat, sess, _seg), start_time in segments_df.start_time.items()
+        ]
+        end_excl = [
+            ~np.any(
+                sess in clips_df.index.get_level_values(level="session")
+                and (
+                    (clips_df.loc[idx[pat, sess, :], ClipsDF.start_time] < end_time)
+                    & (end_time < clips_df.loc[idx[pat, sess, :], ClipsDF.end_time])
+                )
+            )
+            for (pat, sess, _seg), end_time in segments_df.end_time.items()
+        ]
+
+        assert np.all(start_excl) and np.all(end_excl)
