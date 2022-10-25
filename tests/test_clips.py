@@ -38,7 +38,7 @@ def segments_df() -> DataFrame[ClipsDF]:
     test_df.loc["00000001", "00000001_s001_t000", 0] = dict(
         label=0,
         start_time=0,
-        end_time=42,
+        end_time=60,
         date="2022-10-25",
         sampling_rate=250,
         signals_path="/path/to/signals",
@@ -150,7 +150,8 @@ class TestMakeClips:
                 local = clips_df.loc[pat, sess]
                 mask = (local.start_time < end_time) & (end_time <= local.end_time)
 
-                assert local.loc[mask, ClipsDF.label].item() == label
+                # The last time of a session might be dropped, so the mask can be empty
+                assert ~np.any(mask) or local.loc[mask, ClipsDF.label].item() == label
 
     def test_overlap_right(self, segments_df: DataFrame[ClipsDF], clip_length: float):
         clips_df = make_clips(
@@ -178,16 +179,16 @@ class TestMakeClips:
             # We canno toverlap 0, so we skip it
             if sess in clips_bkgd.index.get_level_values(ClipsDF.session) and start_time > 0:
                 local = clips_bkgd.loc[pat, sess]
-                mask = (local.start_time < start_time) & (start_time < local.end_time) or (
+                mask = (local.start_time < start_time) & (start_time < local.end_time) | (
                     (local.start_time < end_time) & (end_time < local.end_time)
                 )
 
-                assert local.loc[mask, ClipsDF.label].item() == 0
+                assert np.all(local.loc[mask, ClipsDF.label] == 0)
 
             if sess in clips_seiz.index.get_level_values(ClipsDF.session) and start_time > 0:
                 local = clips_seiz.loc[pat, sess]
-                mask = (local.start_time < start_time) & (start_time < local.end_time) or (
+                mask = (local.start_time < start_time) & (start_time < local.end_time) | (
                     (local.start_time < end_time) & (end_time < local.end_time)
                 )
 
-                assert local.loc[mask, ClipsDF.label].item() > 0
+                assert np.all(local.loc[mask, ClipsDF.label] > 0)
