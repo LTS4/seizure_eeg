@@ -29,7 +29,6 @@ class TestEEGDataset:
         return EEGDataset(
             clips_df,
             diff_channels=diff_channels,
-            node_level=False,
         )
 
     def test_getitem(self, dataset: EEGDataset):

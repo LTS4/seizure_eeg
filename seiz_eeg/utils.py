@@ -185,7 +185,7 @@ def patients_by_seizures(
 
         return segments_df.loc[
             counts.index[counts.between(low, high)].get_level_values(ClipsDF.patient).unique()
-        ]
+        ].copy()
 
 
 def sessions_by_seizures(
@@ -219,7 +219,7 @@ def sessions_by_seizures(
     num_seiz = segments_df[segments_df[ClipsDF.label] > 0].groupby(ClipsDF.session).size()
     sess_to_keep += num_seiz[num_seiz.between(low, high)].index.to_list()
 
-    return segments_df.loc[idx[:, sess_to_keep, :], :]
+    return segments_df.loc[idx[:, sess_to_keep, :], :].copy()
 
 
 ################################################################################
@@ -314,4 +314,4 @@ def resample_label(
         rng.choice(target_idx, nb_resampled, replace=nb_resampled > len(target_idx), shuffle=False)
     )
 
-    return df.loc[other_idx.append(target_idx)]
+    return df.loc[other_idx.append(target_idx)].copy()
