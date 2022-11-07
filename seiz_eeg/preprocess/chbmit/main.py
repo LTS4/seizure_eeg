@@ -24,4 +24,4 @@ def main(cfg):
 
     df = pd.concat([parse_patient(raw_root, patient) for patient in patients]).sort_index()
 
-    write_parquet(df, Path(cfg.processed_root))
+    write_parquet(df, Path(cfg.processed_root) / "segments.parquet")
