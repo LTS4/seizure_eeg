@@ -4,7 +4,7 @@ import logging
 import click
 from omegaconf import OmegaConf
 
-from seiz_eeg.tusz.main import main as tusz_main
+from seiz_eeg.preprocess.tusz.main import main as tusz_main
 
 
 @click.command(

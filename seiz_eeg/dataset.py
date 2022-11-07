@@ -9,10 +9,9 @@ from pandera.typing import DataFrame
 from tqdm import tqdm
 
 from seiz_eeg.constants import EEG_CHANNELS, EEG_MONTAGES
+from seiz_eeg.preprocess.io import read_parquet
 from seiz_eeg.schemas import ClipsDF
-from seiz_eeg.transforms import SplitWindows
-from seiz_eeg.tusz.signals.io import read_parquet
-from seiz_eeg.tusz.signals.process import get_diff_signals
+from seiz_eeg.transforms import SplitWindows, get_diff_signals
 
 
 def _identity(x):

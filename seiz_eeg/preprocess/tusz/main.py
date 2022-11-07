@@ -7,10 +7,10 @@ from omegaconf import OmegaConf
 
 from seiz_eeg.config import DataConf
 from seiz_eeg.constants import GLOBAL_CHANNEL
+from seiz_eeg.preprocess.io import write_parquet
+from seiz_eeg.preprocess.tusz.download import download
+from seiz_eeg.preprocess.tusz.process import process_walk
 from seiz_eeg.schemas import ClipsLocalDF
-from seiz_eeg.tusz.download import download
-from seiz_eeg.tusz.io import write_parquet
-from seiz_eeg.tusz.process import process_walk
 
 ################################################################################
 # MAIN

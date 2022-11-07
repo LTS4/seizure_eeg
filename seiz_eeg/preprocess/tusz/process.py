@@ -8,11 +8,11 @@ import yaml
 from pandera.typing import DataFrame
 from tqdm import tqdm
 
+from seiz_eeg.preprocess.io import list_all_edf_files
+from seiz_eeg.preprocess.tusz.annotations.process import process_annotations
+from seiz_eeg.preprocess.tusz.signals.io import read_eeg_signals
+from seiz_eeg.preprocess.tusz.signals.process import preprocess_signals
 from seiz_eeg.schemas import ClipsLocalDF
-from seiz_eeg.tusz.annotations.process import process_annotations
-from seiz_eeg.tusz.io import list_all_edf_files
-from seiz_eeg.tusz.signals.io import read_eeg_signals
-from seiz_eeg.tusz.signals.process import preprocess_signals
 
 ################################################################################
 # DATASET

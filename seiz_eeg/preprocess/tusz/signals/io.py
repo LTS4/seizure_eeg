@@ -1,6 +1,5 @@
 """I/O functions for EDF signals"""
 import re
-from functools import lru_cache
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -11,8 +10,8 @@ from pandera import check_types
 from pandera.typing import DataFrame
 
 from seiz_eeg.constants import EEG_CHANNELS
+from seiz_eeg.preprocess.tusz.constants import REGEX_SIGNAL_CHANNELS
 from seiz_eeg.schemas import SignalsDF
-from seiz_eeg.tusz.constants import REGEX_SIGNAL_CHANNELS
 
 
 def format_channel_name(name: str) -> Optional[str]:
@@ -81,8 +80,3 @@ def read_eeg_signals(edf_path: Path) -> Tuple[DataFrame[SignalsDF], int]:
     )
 
     return signals, ref_rate
-
-
-@lru_cache(maxsize=50)
-def read_parquet(file_path):
-    return pd.read_parquet(file_path)

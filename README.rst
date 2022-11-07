@@ -105,7 +105,7 @@ TUH Seizure corpus
 --------------------------------------------------------------------------------
 
 This corpus consists in many hours of labelled EEG sessions.
-The ``seiz_eeg.tusz`` module provides code specific to this dataset annotations
+The ``seiz_eeg.preprocess.tusz`` module provides code specific to this dataset annotations
 and EEG measurements.
 
 To download the data, you need to register (free account).

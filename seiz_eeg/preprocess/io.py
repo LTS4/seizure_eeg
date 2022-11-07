@@ -1,23 +1,14 @@
 """I/O utilities"""
 import logging
 import os
+from functools import lru_cache
 from pathlib import Path
 from typing import List, Optional
 
 import pandas as pd
 from pandera.typing import DataFrame
 
-from seiz_eeg.tusz.utils import lower_na
-
 logger = logging.getLogger(__name__)
-
-
-def read_seiz_vocabulary(file_path: Path) -> DataFrame:
-    return (
-        pd.read_excel(file_path)[["Class Code", "Class No."]]
-        .rename({"Class Code": "label_str", "Class No.": "label_int"}, axis="columns")
-        .pipe(lower_na, "label_str")
-    )
 
 
 def list_all_edf_files(root_path: Path) -> List[Path]:
@@ -51,3 +42,8 @@ def write_parquet(df: DataFrame, path: Path, force_rewrite: Optional[bool] = Tru
     df.to_parquet(path)
 
     return True
+
+
+@lru_cache(maxsize=50)
+def read_parquet(file_path):
+    return pd.read_parquet(file_path)

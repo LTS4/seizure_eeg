@@ -1,8 +1,7 @@
+"""Functions to parse annotations for CHB-MIT"""
 import re
 from pathlib import Path
-from warnings import simplefilter
 
-import numpy as np
 import pandas as pd
 import pandera as pa
 from mne.io import read_raw_edf
@@ -13,6 +12,18 @@ from seiz_eeg.schemas import ClipsDF
 
 @pa.check_types
 def parse_patient(raw_path: Path, patient: str) -> DataFrame[ClipsDF]:
+    """_summary_
+
+    Args:
+        raw_path (Path): _description_
+        patient (str): _description_
+
+    Raises:
+        IOError: _description_
+
+    Returns:
+        DataFrame[ClipsDF]: _description_
+    """
     summary_path = raw_path / f"{patient}/{patient}-summary.txt"
 
     sr_info, _ch_info, *seg_info = summary_path.read_text().split("\n\n")
