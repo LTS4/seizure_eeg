@@ -12,18 +12,6 @@ from seiz_eeg.schemas import ClipsDF
 
 @pa.check_types
 def parse_patient(raw_path: Path, patient: str) -> DataFrame[ClipsDF]:
-    """_summary_
-
-    Args:
-        raw_path (Path): _description_
-        patient (str): _description_
-
-    Raises:
-        IOError: _description_
-
-    Returns:
-        DataFrame[ClipsDF]: _description_
-    """
     summary_path = raw_path / f"{patient}/{patient}-summary.txt"
 
     sr_info, _ch_info, *seg_info = summary_path.read_text().split("\n\n")
@@ -35,25 +23,32 @@ def parse_patient(raw_path: Path, patient: str) -> DataFrame[ClipsDF]:
 
     segments = []
 
-    for sess, info in enumerate(seg_info):
-        file_name = re.search(r"File Name: (\w+\.edf)", info).group(1)
+    # Filter text blocks to only contain sessions info
+    # seg_info = [info for info in seg_info if info.startswith("File Name")]
+
+    for info in seg_info:
+        if not info.startswith("File Name"):
+            continue
+
+        file_name, sess = re.search(r"File Name: (\w+_(\d+\+?)\.edf)", info).group(1, 2)
+
         file_path = raw_path / patient / file_name
 
         date = read_raw_edf(file_path, preload=False, verbose=False).info["meas_date"]
 
         try:
-            start_h, start_m, start_s = map(
+            start_h, start_m, _start_s = map(
                 int, re.search(r"File Start Time: (\d+):(\d\d):(\d\d)", info).groups()
             )
-            end_h, end_m, end_s = map(
+            end_h, end_m, _end_s = map(
                 int, re.search(r"File End Time: (\d+):(\d\d):(\d\d)", info).groups()
             )
         except AttributeError as err:
             raise IOError(f"Error in session {sess}") from err
 
         # Convert times to seconds
-        file_start = (start_h * 60 + start_m) * 60 + start_s
-        file_end = (end_h * 60 + end_m) * 60 + end_s
+        file_start = (start_h * 60 + start_m) * 60 + start_m
+        file_end = (end_h * 60 + end_m) * 60 + end_m
 
         if zero_start is None:
             zero_start = file_start
@@ -62,8 +57,13 @@ def parse_patient(raw_path: Path, patient: str) -> DataFrame[ClipsDF]:
 
         seiz_num = int(re.search(r"Number of Seizures in File: (\d+)", info).group(1))
         if seiz_num > 0:
-            seiz_starts = map(int, re.search(r"Seizure Start Time: (\d+)", info).groups())
-            seiz_ends = map(int, re.search(r"Seizure End Time: (\d+)", info).groups())
+            # Seizure 1 Start Time
+            seiz_starts = re.findall(r"Seizure (?:\d+ )?Start Time: *(\d+)", info)
+            seiz_ends = re.findall(r"Seizure (?:\d+ )?End Time: *(\d+)", info)
+            assert len(seiz_starts) == len(seiz_ends) == seiz_num
+
+            seiz_starts = map(int, seiz_starts)
+            seiz_ends = map(int, seiz_ends)
 
             prev_end = 0
 
@@ -78,7 +78,7 @@ def parse_patient(raw_path: Path, patient: str) -> DataFrame[ClipsDF]:
                         "end_time": seiz_start,
                         "date": date,
                         "sampling_rate": sampling_rate,
-                        "signals_path": file_path,
+                        "signals_path": str(file_path),
                     }
                 )
                 segment_counter += 1
@@ -93,7 +93,7 @@ def parse_patient(raw_path: Path, patient: str) -> DataFrame[ClipsDF]:
                         "end_time": seiz_end,
                         "date": date,
                         "sampling_rate": sampling_rate,
-                        "signals_path": file_path,
+                        "signals_path": str(file_path),
                     }
                 )
                 segment_counter += 1
@@ -110,7 +110,7 @@ def parse_patient(raw_path: Path, patient: str) -> DataFrame[ClipsDF]:
                     "end_time": file_end - file_start,
                     "date": date,
                     "sampling_rate": sampling_rate,
-                    "signals_path": file_path,
+                    "signals_path": str(file_path),
                 }
             )
 
@@ -126,12 +126,15 @@ def parse_patient(raw_path: Path, patient: str) -> DataFrame[ClipsDF]:
                     "end_time": file_end - file_start,
                     "date": date,
                     "sampling_rate": sampling_rate,
-                    "signals_path": file_path,
+                    "signals_path": str(file_path),
                 }
             )
 
-    return (
+    df = (
         pd.DataFrame(segments)
         .set_index([ClipsDF.patient, ClipsDF.session, ClipsDF.segment])
         .astype({ClipsDF.start_time: float, ClipsDF.end_time: float})
     )
+    df[ClipsDF.date] = df[ClipsDF.date].dt.tz_localize(None)
+
+    return df
