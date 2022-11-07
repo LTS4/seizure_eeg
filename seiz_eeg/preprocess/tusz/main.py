@@ -20,14 +20,14 @@ def main(cfg: DataConf):
     """Runs data processing scripts to turn raw data from (../raw) into
     cleaned data ready to be analyzed (saved in ../processed).
     """
-    raw_edf_folder = Path(cfg.tusz.raw_edf)
+    raw_root_folder = Path(cfg.tusz.raw_edf)
     output_folder = Path(cfg.tusz.processed)
 
-    raw_edf_folder.mkdir(parents=True, exist_ok=True)
+    raw_root_folder.mkdir(parents=True, exist_ok=True)
 
     # Download data if missing folders
     if cfg.tusz.force_download or (
-        not set(cfg.tusz.subsets) <= {x.stem for x in raw_edf_folder.iterdir()}
+        not set(cfg.tusz.subsets) <= {x.stem for x in raw_root_folder.iterdir()}
     ):
         logging.info("Downloading data")
         download(
@@ -39,7 +39,7 @@ def main(cfg: DataConf):
     for split in cfg.tusz.subsets:
         logging.info("Creating %s dataset", split.upper())
 
-        root_folder = raw_edf_folder / split
+        root_folder = raw_root_folder / split
         signals_out_folder = output_folder / split / "signals"
 
         logging.info("Creating segments dataframe from %s", root_folder)
