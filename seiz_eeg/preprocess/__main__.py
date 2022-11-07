@@ -4,6 +4,7 @@ import logging
 import click
 from omegaconf import OmegaConf
 
+from seiz_eeg.preprocess.chbmit.main import main as chbmit_main
 from seiz_eeg.preprocess.tusz.main import main as tusz_main
 
 
@@ -30,6 +31,8 @@ def main(config_path: str):
 
     if config.dataset == "tusz":
         tusz_main(config)
+    elif config.dataset == "chbmit":
+        chbmit_main(config)
     else:
         raise NotImplementedError
 
