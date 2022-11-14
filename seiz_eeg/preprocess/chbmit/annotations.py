@@ -9,16 +9,8 @@ from pandera.typing import DataFrame
 from pyedflib import EdfReader
 
 from seiz_eeg.constants import RE_CHANNELS, RE_MONTAGES
+from seiz_eeg.preprocess.chbmit.constants import MIT2TUH, NULL_CHANNELS, TYPOS
 from seiz_eeg.schemas import ClipsDF
-
-NULL_CHANNELS = {"", "-", "."}
-# MIT uses the 10-10 nomenclature while TUH uses the standard 10-20
-MIT2TUH = {"T7": "T3", "T8": "T4", "P7": "T5", "P8": "T6"}
-TYPOS = {
-    "01": "O1",
-    "-CS2": "",
-    "-Ref": "",
-}
 
 
 def replace_all(s: str, mapping: Dict[str, str]) -> str:
