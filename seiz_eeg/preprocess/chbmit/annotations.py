@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pandas as pd
 import pandera as pa
-from mne.io import read_raw_edf
 from pandera.typing import DataFrame
+from pyedflib import EdfReader
 
 from seiz_eeg.schemas import ClipsDF
 
@@ -34,7 +34,7 @@ def parse_patient(raw_path: Path, patient: str) -> DataFrame[ClipsDF]:
 
         file_path = raw_path / patient / file_name
 
-        date = read_raw_edf(file_path, preload=False, verbose=False).info["meas_date"]
+        date = EdfReader(str(file_path)).getStartdatetime()
 
         try:
             start_h, start_m, _start_s = map(
