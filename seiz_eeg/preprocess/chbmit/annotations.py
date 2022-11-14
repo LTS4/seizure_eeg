@@ -1,13 +1,30 @@
 """Functions to parse annotations for CHB-MIT"""
 import re
 from pathlib import Path
+from typing import Dict
 
 import pandas as pd
 import pandera as pa
 from pandera.typing import DataFrame
 from pyedflib import EdfReader
 
+from seiz_eeg.constants import RE_CHANNELS, RE_MONTAGES
 from seiz_eeg.schemas import ClipsDF
+
+NULL_CHANNELS = {"", "-", "."}
+# MIT uses the 10-10 nomenclature while TUH uses the standard 10-20
+MIT2TUH = {"T7": "T3", "T8": "T4", "P7": "T5", "P8": "T6"}
+TYPOS = {
+    "01": "O1",
+    "-CS2": "",
+    "-Ref": "",
+}
+
+
+def replace_all(s: str, mapping: Dict[str, str]) -> str:
+    for key, val in mapping.items():
+        s = s.replace(key, val)
+    return s
 
 
 @pa.check_types
@@ -34,7 +51,14 @@ def parse_patient(raw_path: Path, patient: str) -> DataFrame[ClipsDF]:
 
         file_path = raw_path / patient / file_name
 
-        date = EdfReader(str(file_path)).getStartdatetime()
+        edf_reader = EdfReader(str(file_path))
+        date = edf_reader.getStartdatetime()
+        channels = {
+            montage
+            for raw_montage in edf_reader.getSignalLabels()
+            if (montage := replace_all(raw_montage, dict(**TYPOS, **MIT2TUH))) not in NULL_CHANNELS
+            and re.fullmatch("|".join([RE_MONTAGES, RE_CHANNELS]), montage)
+        }
 
         try:
             start_h, start_m, _start_s = map(
@@ -79,6 +103,7 @@ def parse_patient(raw_path: Path, patient: str) -> DataFrame[ClipsDF]:
                         "date": date,
                         "sampling_rate": sampling_rate,
                         "signals_path": str(file_path),
+                        "channels": channels,
                     }
                 )
                 segment_counter += 1
@@ -94,6 +119,7 @@ def parse_patient(raw_path: Path, patient: str) -> DataFrame[ClipsDF]:
                         "date": date,
                         "sampling_rate": sampling_rate,
                         "signals_path": str(file_path),
+                        "channels": channels,
                     }
                 )
                 segment_counter += 1
@@ -111,6 +137,7 @@ def parse_patient(raw_path: Path, patient: str) -> DataFrame[ClipsDF]:
                     "date": date,
                     "sampling_rate": sampling_rate,
                     "signals_path": str(file_path),
+                    "channels": channels,
                 }
             )
 
@@ -127,6 +154,7 @@ def parse_patient(raw_path: Path, patient: str) -> DataFrame[ClipsDF]:
                     "date": date,
                     "sampling_rate": sampling_rate,
                     "signals_path": str(file_path),
+                    "channels": channels,
                 }
             )
 
