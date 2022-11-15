@@ -96,7 +96,7 @@ class EEGDataset:
             return EEG_CHANNELS
 
     def _get_output_shape(self) -> Tuple[tuple, tuple]:
-        X0, y0 = self.__getitem__(0)
+        X0, y0 = self[0]
         return X0.shape, y0.shape
 
     def __len__(self) -> int:
