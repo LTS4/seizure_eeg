@@ -7,3 +7,5 @@ TYPOS = {
     "-CS2": "",
     "-Ref": "",
 }
+
+REPLACEMENTS = dict(**TYPOS, **MIT2TUH)
