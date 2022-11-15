@@ -37,6 +37,7 @@ def read_eeg_signals(edf_path: Path) -> Tuple[DataFrame[SignalsDF], int]:
     Returns:
         Tuple[DataFrame, int]: signals, sampling_rate
     """
+    # TODO: refactor to use ParallelEdfReader
     try:
         edf_reader = pyedflib.EdfReader(str(edf_path))
     except OSError as err:

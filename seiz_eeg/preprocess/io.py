@@ -2,11 +2,15 @@
 import logging
 import os
 from functools import lru_cache
+from multiprocessing import Pool
 from pathlib import Path
-from typing import List, Optional
+from typing import Callable, List, Optional
 
 import pandas as pd
 from pandera.typing import DataFrame
+from pyedflib import EdfReader
+
+from seiz_eeg.schemas import SignalsDF
 
 logger = logging.getLogger(__name__)
 
@@ -47,3 +51,44 @@ def write_parquet(df: DataFrame, path: Path, force_rewrite: Optional[bool] = Tru
 @lru_cache(maxsize=50)
 def read_parquet(file_path):
     return pd.read_parquet(file_path)
+
+
+class ParallelEdfReader:
+    """EDF+ reader with parallel processing.
+
+    Args:
+        edf_path (str): Path to edf file
+    """
+
+    def __init__(
+        self,
+        edf_path: str,
+        format_channel_name: Optional[Callable[[str], str]] = None,
+        channels_to_read: Optional[List[str]] = None,
+    ) -> None:
+        self.edf_path = edf_path
+
+        edf_reader = EdfReader(str(self.edf_path))
+        self.channel_map = {}
+        for i, channel in enumerate(edf_reader.getSignalLabels()):
+            channel = format_channel_name(channel)
+            if channels_to_read is None or channel in channels_to_read:
+                self.channel_map[channel] = i
+
+        # self.n_channels = edf_reader.signals_in_file
+        # self.nb_samples = edf_reader.getNSamples()
+
+        self.sampling_rates = edf_reader.getSampleFrequencies()
+
+    def read_channel(self, index: int):
+        edf_reader = EdfReader(str(self.edf_path))
+        return edf_reader.readSignal(index)
+
+    def read_signals(self) -> DataFrame[SignalsDF]:
+        """Read signals from EDF and return Dataframe"""
+        # def read_signals(self) -> List[NDArray[np.float_]]:
+
+        with Pool(10) as pool:
+            signals = pool.map(self.read_channel, self.channel_map.values())
+
+        return pd.DataFrame(data=dict(zip(self.channel_map.keys(), signals)))
