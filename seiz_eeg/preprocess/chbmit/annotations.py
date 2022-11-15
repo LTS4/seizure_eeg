@@ -13,14 +13,26 @@ from seiz_eeg.preprocess.chbmit.constants import MIT2TUH, NULL_CHANNELS, TYPOS
 from seiz_eeg.schemas import ClipsDF
 
 
-def replace_all(s: str, mapping: Dict[str, str]) -> str:
+def replace_all(text: str, mapping: Dict[str, str]) -> str:
     for key, val in mapping.items():
-        s = s.replace(key, val)
-    return s
+        text = text.replace(key, val)
+    return text
 
 
 @pa.check_types
 def parse_patient(raw_path: Path, patient: str) -> DataFrame[ClipsDF]:
+    """Parse summary file for :arg:`patient` and read metadata fro references edf files.
+
+    Args:
+        raw_path (Path): Path to raw CHB-MIT data and annotations
+        patient (str): Patient name (chb\\d\\d)
+
+    Raises:
+        IOError: If a session annotation does not correspond to expected format
+
+    Returns:
+        DataFrame[ClipsDF]: Segements dataframe for target patient
+    """
     summary_path = raw_path / f"{patient}/{patient}-summary.txt"
 
     sr_info, _ch_info, *seg_info = summary_path.read_text().split("\n\n")
@@ -39,7 +51,10 @@ def parse_patient(raw_path: Path, patient: str) -> DataFrame[ClipsDF]:
         if not info.startswith("File Name"):
             continue
 
-        file_name, sess = re.search(r"File Name: (\w+_(\d+\+?)\.edf)", info).group(1, 2)
+        file_name, sess = re.search(
+            rf"File Name: ({patient}_?((?:\w_)?\d+\+?)\.edf)",
+            info,
+        ).group(1, 2)
 
         file_path = raw_path / patient / file_name
 
