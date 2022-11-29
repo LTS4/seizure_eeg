@@ -63,7 +63,7 @@ class EEGDataset:
         self.output_shape = self._get_output_shape()
 
     def __getitem__(self, index: int) -> Tuple[NDArray[np.float_], NDArray[np.int_]]:
-        label, start_time, end_time, _, s_rate, signals_path = self.clips_df.iloc[index]
+        label, start_time, end_time, _, s_rate, signals_path, *_ = self.clips_df.iloc[index]
 
         start_sample = int(start_time * s_rate)
 
