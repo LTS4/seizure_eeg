@@ -28,6 +28,7 @@ class EEGDataset:
         *,
         signal_transform: Optional[Callable[[NDArray[np.float_]], Union[NDArray, Any]]] = None,
         label_transform: Optional[Callable[[int], Any]] = None,
+        prefetch: bool = False,
         diff_channels: bool = False,
     ) -> None:
         """Dataset of EEG clips with seizure labels
@@ -60,9 +61,16 @@ class EEGDataset:
         self.signal_transform = signal_transform or _identity
         self.label_transform = label_transform or _identity
 
+        self._prefetched = None
+        if prefetch:
+            self._prefetched = list(self)
+
         self.output_shape = self._get_output_shape()
 
     def __getitem__(self, index: int) -> Tuple[NDArray[np.float_], NDArray[np.int_]]:
+        if self._prefetched:
+            return self._prefetched[index]
+
         label, start_time, end_time, _, s_rate, signals_path, *_ = self.clips_df.iloc[index]
 
         start_sample = int(start_time * s_rate)
