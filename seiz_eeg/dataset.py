@@ -9,10 +9,9 @@ from pandera.typing import DataFrame
 from tqdm import tqdm
 
 from seiz_eeg.constants import EEG_CHANNELS, EEG_MONTAGES
+from seiz_eeg.preprocess.io import read_parquet
 from seiz_eeg.schemas import ClipsDF
-from seiz_eeg.transforms import SplitWindows
-from seiz_eeg.tusz.signals.io import read_parquet
-from seiz_eeg.tusz.signals.process import get_diff_signals
+from seiz_eeg.transforms import SplitWindows, get_diff_signals
 
 
 def _identity(x):
@@ -29,6 +28,7 @@ class EEGDataset:
         *,
         signal_transform: Optional[Callable[[NDArray[np.float_]], Union[NDArray, Any]]] = None,
         label_transform: Optional[Callable[[int], Any]] = None,
+        prefetch: bool = False,
         diff_channels: bool = False,
     ) -> None:
         """Dataset of EEG clips with seizure labels
@@ -61,10 +61,17 @@ class EEGDataset:
         self.signal_transform = signal_transform or _identity
         self.label_transform = label_transform or _identity
 
+        self._prefetched = None
+        if prefetch:
+            self._prefetched = list(self)
+
         self.output_shape = self._get_output_shape()
 
     def __getitem__(self, index: int) -> Tuple[NDArray[np.float_], NDArray[np.int_]]:
-        label, start_time, end_time, _, s_rate, signals_path = self.clips_df.iloc[index]
+        if self._prefetched:
+            return self._prefetched[index]
+
+        label, start_time, end_time, _, s_rate, signals_path, *_ = self.clips_df.iloc[index]
 
         start_sample = int(start_time * s_rate)
 
@@ -97,7 +104,7 @@ class EEGDataset:
             return EEG_CHANNELS
 
     def _get_output_shape(self) -> Tuple[tuple, tuple]:
-        X0, y0 = self.__getitem__(0)
+        X0, y0 = self[0]
         return X0.shape, y0.shape
 
     def __len__(self) -> int:

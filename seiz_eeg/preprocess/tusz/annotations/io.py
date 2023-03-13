@@ -9,9 +9,9 @@ from pandera import check_types
 from pandera.typing import DataFrame
 
 from seiz_eeg.constants import GLOBAL_CHANNEL
+from seiz_eeg.preprocess.tusz.constants import REGEX_LABEL, REGEX_MONTAGE, REGEX_SYMBOLS
+from seiz_eeg.preprocess.tusz.utils import check_label, concat_labels
 from seiz_eeg.schemas import ClipsDF, LabelDF
-from seiz_eeg.tusz.constants import REGEX_LABEL, REGEX_MONTAGE, REGEX_SYMBOLS
-from seiz_eeg.tusz.utils import check_label, concat_labels
 
 
 @check_types

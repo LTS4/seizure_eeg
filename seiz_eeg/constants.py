@@ -15,6 +15,8 @@ GLOBAL_CHANNEL = "global"
 ################################################################################
 # SIGNALS CHANNELS/MONTAGES
 
+_RE_CHANNEL = r"[FTPCO]+(?:\d+|Z)"
+RE_CHANNELS = f"^{_RE_CHANNEL}$"
 EEG_CHANNELS = [
     "FP1",
     "FP2",
@@ -37,7 +39,7 @@ EEG_CHANNELS = [
     "PZ",
 ]
 
-
+RE_MONTAGES = f"({_RE_CHANNEL})-({_RE_CHANNEL})"
 EEG_MONTAGES = [
     "FP1-F7",
     "F7-T3",

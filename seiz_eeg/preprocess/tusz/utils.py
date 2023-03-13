@@ -6,8 +6,8 @@ from typing import List
 import pandas as pd
 from pandera.typing import DataFrame
 
+from seiz_eeg.preprocess.tusz.constants import TYPOS
 from seiz_eeg.schemas import LabelDF
-from seiz_eeg.tusz.constants import TYPOS
 
 
 def lower_na(df, column: str):

@@ -3,6 +3,10 @@
 from typing import Any, Callable, List, Optional, Tuple
 
 import numpy as np
+import pandas as pd
+from pandera.typing import DataFrame
+
+from seiz_eeg.schemas import SignalsDF, SignalsDiffDF
 
 
 class Concatenate:
@@ -102,3 +106,23 @@ class OldTransform:
                 signals /= self.std
 
         return signals
+
+
+####################################################################################################
+# PAIRWISE DIFFERENCES
+
+
+def get_diff_signals(
+    signals: DataFrame[SignalsDF], label_channels: List[str]
+) -> DataFrame[SignalsDiffDF]:
+    """Take as input a signals dataframe and return the columm differences specified in
+    *label_channels*"""
+    diff_signals = pd.DataFrame(
+        np.empty((len(signals), len(label_channels))), columns=label_channels
+    )
+
+    for diff_label in label_channels:
+        el1, el2 = diff_label.split("-")
+        diff_signals.loc[:, diff_label] = (signals[el1] - signals[el2]).values
+
+    return diff_signals

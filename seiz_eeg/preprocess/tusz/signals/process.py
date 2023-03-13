@@ -1,13 +1,10 @@
 """Processing data from edf files"""
-from typing import List
-
 import numpy as np
 import pandas as pd
-from pandera.typing import DataFrame, Index
+from pandera.typing import DataFrame
 from scipy.signal import resample
 
-from seiz_eeg.schemas import SignalsDF, SignalsDiffDF
-from seiz_eeg.tusz.constants import SIGNAL_CHANNELS_FMT
+from seiz_eeg.schemas import SignalsDF
 
 ################################################################################
 # RASAMPLING
@@ -40,38 +37,6 @@ def resample_signals(
         )
 
     return signals
-
-
-####################################################################################################
-# PAIRWISE DIFFERENCES
-
-
-def get_diff_signals_buggy(signals: DataFrame[SignalsDF], label_channels: Index[str]):
-    """This should be a fater version of get_diff_signals"""
-    lhs, rhs = [], []
-
-    for diff_label in label_channels:
-        el1, el2 = diff_label.split("-")
-        lhs.append(SIGNAL_CHANNELS_FMT.format(el1))
-        rhs.append(SIGNAL_CHANNELS_FMT.format(el2))
-
-    return pd.DataFrame((signals[lhs] - signals[rhs]).values, columns=label_channels)
-
-
-def get_diff_signals(
-    signals: DataFrame[SignalsDF], label_channels: List[str]
-) -> DataFrame[SignalsDiffDF]:
-    """Take as input a signals dataframe and return the columm differences specified in
-    *label_channels*"""
-    diff_signals = pd.DataFrame(
-        np.empty((len(signals), len(label_channels))), columns=label_channels
-    )
-
-    for diff_label in label_channels:
-        el1, el2 = diff_label.split("-")
-        diff_signals.loc[:, diff_label] = (signals[el1] - signals[el2]).values
-
-    return diff_signals
 
 
 ####################################################################################################
