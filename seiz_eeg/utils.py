@@ -307,7 +307,7 @@ def resample_label(
     target_idx = df.index[target_mask]
     other_idx = df.index[~target_mask]
 
-    nb_resampled = ratio * len(other_idx)
+    nb_resampled = int(ratio * len(other_idx))
 
     rng = default_rng(seed)
     target_idx = pd.MultiIndex.from_tuples(
