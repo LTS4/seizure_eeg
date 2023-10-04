@@ -23,7 +23,7 @@ class EEGDataset:
 
     Args:
         clips_df (DataFrame[ClipsDF]): Pandas dataframe of EEG clips annotations
-        signal_transform (Callable[[NDArray[np.float_]], NDArray | Any], optional):
+        signal_transform (Callable[[NDArray[float]], NDArray | Any], optional):
             Function to transform signals before they are returned. Defaults to None.
         label_transform (Callable[[int], Any], optional): Function to
             transform labels before they are returned. Defaults to None.
@@ -182,7 +182,7 @@ class EEGFileDataset(EEGDataset):
 
 
 def to_arrays(data: EEGDataset, pbar=False) -> Tuple[NDArray[np.float_], NDArray[np.int_]]:
-    """Load all signals from :arg:`data` into a tensor.
+    """Load all signals from :py:obj:`data` into a tensor.
 
     Args:
         data (EEGDataset): Clips dataset.
@@ -190,7 +190,7 @@ def to_arrays(data: EEGDataset, pbar=False) -> Tuple[NDArray[np.float_], NDArray
         pbar (bool, optional): Wether toshow a progress bar while loading. Defaults to False.
 
     Returns:
-        Tuple[NDArray[np.float_], NDArray[np.int_]]: Signals and labels
+        Tuple[NDArray[float], NDArray[int]]: Signals and labels
     """
     # return next(iter(DataLoader(data, batch_size=len(data))))
     if pbar:
