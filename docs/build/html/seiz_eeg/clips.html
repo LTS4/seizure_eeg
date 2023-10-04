@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>seiz_eeg.clips &#8212; EEG pipeline for reproducible ML  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=039e1c02" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-seiz_eeg.clips">
+<span id="seiz-eeg-clips"></span><h1>seiz_eeg.clips<a class="headerlink" href="#module-seiz_eeg.clips" title="Link to this heading">¶</a></h1>
+<p>Functions to extract clips from seizure datasets</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="seiz_eeg.clips.make_clips">
+<span class="sig-prename descclassname"><span class="pre">seiz_eeg.clips.</span></span><span class="sig-name descname"><span class="pre">make_clips</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segments_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span><span class="p"><span class="pre">[</span></span><span class="pre">ClipsDF</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clip_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clip_stride</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overlap_action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'ignore'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sort_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span><span class="p"><span class="pre">[</span></span><span class="pre">ClipsDF</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#seiz_eeg.clips.make_clips" title="Link to this definition">¶</a></dt>
+<dd><p>Split annotations dataframe in dataframe of clips</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>segments_df</strong> (<em>DataFrame</em><em>[</em><em>ClipsDF</em><em>]</em>) – Dataframe containing annotations for EEG segments</p></li>
+<li><p><strong>clip_length</strong> (<em>float</em>) – Lenght of the output clips, in same
+unit as <em>start_time</em> and <em>end_time</em> of <a href="#id1"><span class="problematic" id="id2">:arg:`segments_df`</span></a>. A
+negative value returns the segments unchanged, but sort the dataset
+by index.</p></li>
+<li><p><strong>clip_stride</strong> (<em>Union</em><em>[</em><em>float</em><em>, </em><em>str</em><em>, </em><em>tuple</em><em>]</em>) – <p>Stride to extract the start times of the clips.
+Integer or real values give explicit stride. If string or tuple,
+must be one of the following, with respective parameters.:
+- <code class="docutils literal notranslate"><span class="pre">start</span></code>: extract one clip per segment, starting at onset/termination label.
+- <code class="docutils literal notranslate"><span class="pre">pre-ictal</span></code>: for each onset time extract the beginning of ictal</p>
+<blockquote>
+<div><p>segment and the preictal clip ending <em>clip_lenght</em>, or specified sec before
+onset time. Only pairs of pre-ictal/ictal clips are returned</p>
+</div></blockquote>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">random</span></code>: For each segment, extact a random clip of desired length.</p></li>
+</ul>
+</p></li>
+<li><p><strong>overlap_action</strong> (<em>str</em>) – <p>What to do with clips overlapping segments.
+Options:
+- <code class="docutils literal notranslate"><span class="pre">ignore</span></code>: do not include any crossing clips
+- <code class="docutils literal notranslate"><span class="pre">left</span></code>: the label of crossing clips is given by the left</p>
+<blockquote>
+<div><p>(preceding) segment</p>
+</div></blockquote>
+<ul>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">right</span></code>: the label of crossing clips is given by the right</dt><dd><p>(ending) segment</p>
+</dd>
+</dl>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">seizure</span></code>: the label of crossing clips is given by the ictal</p></li>
+</ul>
+<p>segment. (No more than two segments should be crossing)
+- <code class="docutils literal notranslate"><span class="pre">bkgd</span></code>: set the label of crossing clips to be 0</p>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">clip_stride</span></code> is negative, or an invalid string</p></li>
+<li><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">overlap_action</span></code> is an invalid string</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Clips dataframe</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>DataFrame[ClipsDF]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">EEG pipeline for reproducible ML</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, William Cappelletti.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+      |
+      <a href="../_sources/seiz_eeg/clips.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

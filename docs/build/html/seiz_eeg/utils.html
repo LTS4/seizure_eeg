@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>seiz_eeg.utils &#8212; EEG pipeline for reproducible ML  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=039e1c02" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="seiz_eeg.transforms" href="transforms.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-seiz_eeg.utils">
+<span id="seiz-eeg-utils"></span><h1>seiz_eeg.utils<a class="headerlink" href="#module-seiz_eeg.utils" title="Link to this heading">¶</a></h1>
+<p>Utility functions for EEG Datasets</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="seiz_eeg.utils.cut_long_sessions">
+<span class="sig-prename descclassname"><span class="pre">seiz_eeg.utils.</span></span><span class="sig-name descname"><span class="pre">cut_long_sessions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segments_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span><span class="p"><span class="pre">[</span></span><span class="pre">ClipsDF</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span><span class="p"><span class="pre">[</span></span><span class="pre">ClipsDF</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#seiz_eeg.utils.cut_long_sessions" title="Link to this definition">¶</a></dt>
+<dd><p>Cut EEG session longer than <a href="#id1"><span class="problematic" id="id2">:arg:`max_time`</span></a>.</p>
+<p>If <a href="#id3"><span class="problematic" id="id4">:arg:`max_time`</span></a> is smaller than zero then <a href="#id5"><span class="problematic" id="id6">:arg:`segments_df`</span></a> is returned unchanged.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>segments_df</strong> (<em>DataFrame</em><em>[</em><em>ClipsDF</em><em>]</em>) – Dataframe of EEG segments</p></li>
+<li><p><strong>max_time</strong> (<em>float</em>) – Cutoff time</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Datset of clipped sessions.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>DataFrame[ClipsDF]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seiz_eeg.utils.extract_target_labels">
+<span class="sig-prename descclassname"><span class="pre">seiz_eeg.utils.</span></span><span class="sig-name descname"><span class="pre">extract_target_labels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span><span class="p"><span class="pre">[</span></span><span class="pre">ClipsDF</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">relabel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span><span class="p"><span class="pre">[</span></span><span class="pre">ClipsDF</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#seiz_eeg.utils.extract_target_labels" title="Link to this definition">¶</a></dt>
+<dd><p>Old name of <a class="reference internal" href="#seiz_eeg.utils.segments_by_labels" title="seiz_eeg.utils.segments_by_labels"><code class="xref py py-func docutils literal notranslate"><span class="pre">segments_by_labels</span></code></a>. DEPRECATED</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seiz_eeg.utils.patient_split">
+<span class="sig-prename descclassname"><span class="pre">seiz_eeg.utils.</span></span><span class="sig-name descname"><span class="pre">patient_split</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span><span class="p"><span class="pre">[</span></span><span class="pre">ClipsDF</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ratio_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ratio_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#seiz_eeg.utils.patient_split" title="Link to this definition">¶</a></dt>
+<dd><p>Compute a set of patients from segments_df indices such that they represent between ratio min
+and max of each label appearences.</p>
+<p>Patients are randomly sampled to satisy the constraint on each label iteratively. In some cases,
+previous selections make it impossible to satisfy the constraint by adding any patient. This
+functions tries ten different random subsets before failing. In that case, with high probability
+no split exists.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>DataFrame</em><em>[</em><em>ClipsDF</em><em>]</em>) – Dataframe of EEG segments</p></li>
+<li><p><strong>ratio_min</strong> (<em>float</em>) – Minimum fraction of labels to cover</p></li>
+<li><p><strong>ratio_max</strong> (<em>float</em>) – Maximum fraction of labels to cover</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ValueError</strong> – If ratio_[min|max] do not satisfy <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">&lt;</span> <span class="pre">ratio_min</span> <span class="pre">&lt;=</span> <span class="pre">ratio_max</span> <span class="pre">&lt;</span> <span class="pre">1</span></code></p></li>
+<li><p><strong>ValueError</strong> – If the sampling algorithm fails 10 times, which probably means that
+    ratio_[min|max] are too restrictive</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of selected patients</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>List[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seiz_eeg.utils.patients_by_seizures">
+<span class="sig-prename descclassname"><span class="pre">seiz_eeg.utils.</span></span><span class="sig-name descname"><span class="pre">patients_by_seizures</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segments_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span><span class="p"><span class="pre">[</span></span><span class="pre">ClipsDF</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">low</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">inf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span><span class="p"><span class="pre">[</span></span><span class="pre">ClipsDF</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#seiz_eeg.utils.patients_by_seizures" title="Link to this definition">¶</a></dt>
+<dd><p>Filter patients to have a number of seizures between low and high</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>segments_df</strong> (<em>DataFrame</em><em>[</em><em>ClipsDF</em><em>]</em>) – Segments annotation dataframe</p></li>
+<li><p><strong>min_nb_seiz</strong> (<em>int</em><em>, </em><em>optinal</em>) – Minumum number of seizures per patient
+(inclusive). Defaults to 0.</p></li>
+<li><p><strong>max_nb_seiz</strong> (<em>int</em><em>, </em><em>optinal</em>) – Maximum number of seizures per patient
+(inclusive). Defaults to infinity.</p></li>
+<li><p><strong>total</strong> (<em>bool</em><em>, </em><em>optional</em>) – Wether to aggregate all kind of seizures in the
+count. Defaults to False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Filtered dataframe</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>DataFrame[ClipsDF]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seiz_eeg.utils.resample_label">
+<span class="sig-prename descclassname"><span class="pre">seiz_eeg.utils.</span></span><span class="sig-name descname"><span class="pre">resample_label</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span><span class="p"><span class="pre">[</span></span><span class="pre">ClipsDF</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span><span class="p"><span class="pre">[</span></span><span class="pre">ClipsDF</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#seiz_eeg.utils.resample_label" title="Link to this definition">¶</a></dt>
+<dd><p>_summary_</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>DataFrame</em><em>[</em><em>ClipsDF</em><em>]</em>) – Dataframe of EEG clips or segments</p></li>
+<li><p><strong>label</strong> (<em>int</em>) – Label to resample.</p></li>
+<li><p><strong>ratio</strong> (<em>float</em><em>, </em><em>optional</em>) – Ratio of desired samples w.r.t. the total count
+of other labels. If the desired <a href="#id7"><span class="problematic" id="id8">:var:`ratio`</span></a> exceeds the label
+counts, then the label is bootstrapped (sampled with replacement),
+otherwise it is downsampled (no replacement). Defaults to 1.</p></li>
+<li><p><strong>seed</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em><em>, </em><em>optional</em>) – Random seed. Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dataframe with target class resampled.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>DataFrame[ClipsDF]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seiz_eeg.utils.segments_by_labels">
+<span class="sig-prename descclassname"><span class="pre">seiz_eeg.utils.</span></span><span class="sig-name descname"><span class="pre">segments_by_labels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span><span class="p"><span class="pre">[</span></span><span class="pre">ClipsDF</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">relabel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span><span class="p"><span class="pre">[</span></span><span class="pre">ClipsDF</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#seiz_eeg.utils.segments_by_labels" title="Link to this definition">¶</a></dt>
+<dd><p>Extract rows of <a href="#id9"><span class="problematic" id="id10">:var:`df`</span></a> whose labels are in <a href="#id11"><span class="problematic" id="id12">:var:`target_labels`</span></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>DataFrame</em><em>[</em><em>ClipsDF</em><em>]</em>) – Dataframe of EEG clips</p></li>
+<li><p><strong>target_labels</strong> (<em>List</em><em>[</em><em>int</em><em>]</em>) – List of integer labels to extract</p></li>
+<li><p><strong>relabel</strong> (<em>bool</em>) – Whether to relabel <cite>target_labels</cite> progressively from 0</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Subset of <a href="#id13"><span class="problematic" id="id14">:var:`df`</span></a> with desired labels.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>DataFrame[ClipsDF]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seiz_eeg.utils.sessions_by_labels">
+<span class="sig-prename descclassname"><span class="pre">seiz_eeg.utils.</span></span><span class="sig-name descname"><span class="pre">sessions_by_labels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span><span class="p"><span class="pre">[</span></span><span class="pre">ClipsDF</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">relabel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span><span class="p"><span class="pre">[</span></span><span class="pre">ClipsDF</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#seiz_eeg.utils.sessions_by_labels" title="Link to this definition">¶</a></dt>
+<dd><p>Extract sessions of <a href="#id15"><span class="problematic" id="id16">:var:`df`</span></a> whose labels are in <a href="#id17"><span class="problematic" id="id18">:var:`target_labels`</span></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>DataFrame</em><em>[</em><em>ClipsDF</em><em>]</em>) – Dataframe of EEG clips</p></li>
+<li><p><strong>target_labels</strong> (<em>List</em><em>[</em><em>int</em><em>]</em>) – List of integer labels to extract</p></li>
+<li><p><strong>relabel</strong> (<em>bool</em>) – Whether to relabel <cite>target_labels</cite> progressively from 0</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Subset of <a href="#id19"><span class="problematic" id="id20">:var:`df`</span></a> with desired labels.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>DataFrame[ClipsDF]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="seiz_eeg.utils.sessions_by_seizures">
+<span class="sig-prename descclassname"><span class="pre">seiz_eeg.utils.</span></span><span class="sig-name descname"><span class="pre">sessions_by_seizures</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segments_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span><span class="p"><span class="pre">[</span></span><span class="pre">ClipsDF</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">low</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">inf</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span><span class="p"><span class="pre">[</span></span><span class="pre">ClipsDF</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#seiz_eeg.utils.sessions_by_seizures" title="Link to this definition">¶</a></dt>
+<dd><p>Extract only sessions with at least <a href="#id21"><span class="problematic" id="id22">:var:`min_nb_seiz`</span></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>segments_df</strong> (<em>DataFrame</em><em>[</em><em>ClipsDF</em><em>]</em>) – Segments annotation dataframe</p></li>
+<li><p><strong>min_nb_seiz</strong> (<em>int</em>) – Minumum number of seizures per session (inclusive)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Annotation dataframe with only requested sessions</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>DataFrame[ClipsDF]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">EEG pipeline for reproducible ML</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../Tutorial.html">Tutorial - Handling events and EEG dataframes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="clips.html">seiz_eeg.clips</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dataset.html">seiz_eeg.dataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="transforms.html">seiz_eeg.transforms</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">seiz_eeg.utils</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#seiz_eeg.utils.cut_long_sessions"><code class="docutils literal notranslate"><span class="pre">cut_long_sessions</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#seiz_eeg.utils.extract_target_labels"><code class="docutils literal notranslate"><span class="pre">extract_target_labels</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#seiz_eeg.utils.patient_split"><code class="docutils literal notranslate"><span class="pre">patient_split</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#seiz_eeg.utils.patients_by_seizures"><code class="docutils literal notranslate"><span class="pre">patients_by_seizures</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#seiz_eeg.utils.resample_label"><code class="docutils literal notranslate"><span class="pre">resample_label</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#seiz_eeg.utils.segments_by_labels"><code class="docutils literal notranslate"><span class="pre">segments_by_labels</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#seiz_eeg.utils.sessions_by_labels"><code class="docutils literal notranslate"><span class="pre">sessions_by_labels</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#seiz_eeg.utils.sessions_by_seizures"><code class="docutils literal notranslate"><span class="pre">sessions_by_seizures</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="transforms.html" title="previous chapter">seiz_eeg.transforms</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, William Cappelletti.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+      |
+      <a href="../_sources/seiz_eeg/utils.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
