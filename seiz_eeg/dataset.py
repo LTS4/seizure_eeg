@@ -19,9 +19,25 @@ def _identity(x):
 
 
 class EEGDataset:
-    """Dataset of EEG clips with seizure labels"""
+    """Dataset of EEG clips with seizure labels
 
-    @check_types
+    Args:
+        clips_df (DataFrame[ClipsDF]): Pandas dataframe of EEG clips annotations
+        signal_transform (Callable[[NDArray[np.float_]], NDArray | Any], optional):
+            Function to transform signals before they are returned. Defaults to None.
+        label_transform (Callable[[int], Any], optional): Function to
+            transform labels before they are returned. Defaults to None.
+        prefetch (bool, optional): Wether to prefetch all clips. Defaults to False.
+        diff_channels (bool, optional): Wether to subtract pairwise channels.
+            Defaults to False.
+
+    Attributes:
+        clip_lenght (float): Lenght of each clip in seconds.
+        s_rate (int): Sampling rate of the clips.
+        output_shape (Tuple[tuple, tuple]): Shape of the output tensors.
+    """
+
+    # @check_types
     def __init__(
         self,
         clips_df: DataFrame[ClipsDF],
@@ -31,18 +47,6 @@ class EEGDataset:
         prefetch: bool = False,
         diff_channels: bool = False,
     ) -> None:
-        """Dataset of EEG clips with seizure labels
-
-        Args:
-            clips_df (DataFrame[ClipsDF]): Pandas dataframe of EEG clips annotations
-            signal_transform (Callable[[NDArray[np.float_]], NDArray | Any], optional):
-                Function to transform signals before they are returned. Defaults to None.
-            label_transform (Callable[[int], Any], optional): Function to
-                transform labels before they are returned. Defaults to None.
-            diff_channels (bool, optional): Whether to use channel differences
-                or not. Defaults to False.
-            seed (int, optional): Random seed. Defaults to None.
-        """
         super().__init__()
 
         logging.debug("Creating clips from segments")
