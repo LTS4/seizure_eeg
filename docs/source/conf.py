@@ -31,6 +31,8 @@ intersphinx_mapping = {
     "numpy": ("https://numpy.org/doc/stable/", None),
     "cupy": ("https://docs-cupy.chainer.org/en/stable/", None),
     "sklearn": ("https://scikit-learn.org/stable/", None),
+    "pandas": ("https://pandas.pydata.org/docs/", None),
+    "pandera": ("https://pandera.readthedocs.io/en/stable/", None),
 }
 
 templates_path = ["_templates"]

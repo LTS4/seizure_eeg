@@ -13,6 +13,8 @@
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="seiz_eeg.dataset" href="dataset.html" />
+    <link rel="prev" title="Handling events and EEG dataframes" href="../tutorials/1-events_and_dataframes.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
   
@@ -41,7 +43,7 @@
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>segments_df</strong> (<em>DataFrame</em><em>[</em><em>ClipsDF</em><em>]</em>) – Dataframe containing annotations for EEG segments</p></li>
 <li><p><strong>clip_length</strong> (<em>float</em>) – Lenght of the output clips, in same
-unit as <em>start_time</em> and <em>end_time</em> of <a href="#id1"><span class="problematic" id="id2">:arg:`segments_df`</span></a>. A
+unit as <em>start_time</em> and <em>end_time</em> of <code class="xref py py-attr docutils literal notranslate"><span class="pre">segments_df</span></code>. A
 negative value returns the segments unchanged, but sort the dataset
 by index.</p></li>
 <li><p><strong>clip_stride</strong> (<em>Union</em><em>[</em><em>float</em><em>, </em><em>str</em><em>, </em><em>tuple</em><em>]</em>) – <p>Stride to extract the start times of the clips.
@@ -111,11 +113,27 @@ Options:
 
 
 <h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/1-events_and_dataframes.html">Handling events and EEG dataframes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference guide</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">seiz_eeg.clips</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#seiz_eeg.clips.make_clips"><code class="docutils literal notranslate"><span class="pre">make_clips</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="dataset.html">seiz_eeg.dataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="transforms.html">seiz_eeg.transforms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">seiz_eeg.utils</a></li>
+</ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="../tutorials/1-events_and_dataframes.html" title="previous chapter">Handling events and EEG dataframes</a></li>
+      <li>Next: <a href="dataset.html" title="next chapter">seiz_eeg.dataset</a></li>
   </ul></li>
 </ul>
 </div>

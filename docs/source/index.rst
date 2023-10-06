@@ -6,12 +6,19 @@
 Welcome to EEG pipeline for reproducible ML's documentation!
 ============================================================
 
+
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Tutorials
    :glob:
 
-   Tutorial
+   tutorials/*
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Reference guide
+   :glob:
+
    seiz_eeg/*
 
 

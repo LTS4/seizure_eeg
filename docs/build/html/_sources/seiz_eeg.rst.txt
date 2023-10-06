@@ -1,9 +1,0 @@
-========
-seiz_eeg
-========
-
-Datasets
-========
-
-.. automodule:: seiz_eeg.dataset
-    :members:
