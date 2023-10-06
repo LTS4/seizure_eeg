@@ -241,7 +241,8 @@ def extract_target_labels(
 
 def _relabel(df: DataFrame[ClipsDF], target_labels: List[int]) -> DataFrame[ClipsDF]:
     lmap = {label: i for i, label in enumerate(target_labels)}
-    return df["label"].map(lmap)
+    df["label"] =  df["label"].map(lmap)
+    return df
 
 
 def segments_by_labels(
@@ -260,7 +261,7 @@ def segments_by_labels(
 
     df = df.loc[df["label"].isin(target_labels)].copy()
     if relabel:
-        df = _relabel(df, target_labels)
+        return _relabel(df, target_labels)
     return df
 
 
@@ -281,7 +282,7 @@ def sessions_by_labels(
     sessions = label_sets.index[label_sets <= set(target_labels)]
     df = df.loc[idx[:, sessions, :]]
     if relabel:
-        df = _relabel(df, target_labels)
+        return _relabel(df, target_labels)
     return df
 
 
