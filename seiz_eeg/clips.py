@@ -49,7 +49,7 @@ def _handle_overlaps(
 
     Args:
         copy_vals (DataFrame): Intermediate clips dataframe
-        index_names (List[str]): List of columns in :var:`copy_vars` to identify overlaps (indices)
+        index_names (List[str]): List of columns in :attr:`copy_vars` to identify overlaps (indices)
         overlap_action (str): _description_
 
     Raises:
@@ -229,7 +229,7 @@ def make_clips(
     Args:
         segments_df (DataFrame[ClipsDF]): Dataframe containing annotations for EEG segments
         clip_length (float): Lenght of the output clips, in same
-            unit as *start_time* and *end_time* of :arg:`segments_df`. A
+            unit as *start_time* and *end_time* of :attr:`segments_df`. A
             negative value returns the segments unchanged, but sort the dataset
             by index.
         clip_stride (Union[float, str, tuple]): Stride to extract the start times of the clips.

@@ -13,9 +13,9 @@ from seiz_eeg.schemas import ClipsDF
 
 
 def cut_long_sessions(segments_df: DataFrame[ClipsDF], max_time: float) -> DataFrame[ClipsDF]:
-    """Cut EEG session longer than :arg:`max_time`.
+    """Cut EEG session longer than :attr:`max_time`.
 
-    If :arg:`max_time` is smaller than zero then :arg:`segments_df` is returned unchanged.
+    If :attr:`max_time` is smaller than zero then :attr:`segments_df` is returned unchanged.
 
     Args:
         segments_df (DataFrame[ClipsDF]): Dataframe of EEG segments
@@ -191,7 +191,7 @@ def patients_by_seizures(
 def sessions_by_seizures(
     segments_df: DataFrame[ClipsDF], low: int = 0, high: int = np.inf
 ) -> DataFrame[ClipsDF]:
-    """Extract only sessions with at least :var:`min_nb_seiz`.
+    """Extract only sessions with at least :attr:`min_nb_seiz`.
 
     Args:
         segments_df (DataFrame[ClipsDF]): Segments annotation dataframe
@@ -247,7 +247,7 @@ def _relabel(df: DataFrame[ClipsDF], target_labels: List[int]) -> DataFrame[Clip
 def segments_by_labels(
     df: DataFrame[ClipsDF], target_labels: List[int], relabel: bool = False
 ) -> DataFrame[ClipsDF]:
-    """Extract rows of :var:`df` whose labels are in :var:`target_labels`
+    """Extract rows of :attr:`df` whose labels are in :attr:`target_labels`
 
     Args:
         df (DataFrame[ClipsDF]): Dataframe of EEG clips
@@ -255,7 +255,7 @@ def segments_by_labels(
         relabel(bool): Whether to relabel `target_labels` progressively from 0
 
     Returns:
-        DataFrame[ClipsDF]: Subset of :var:`df` with desired labels.
+        DataFrame[ClipsDF]: Subset of :attr:`df` with desired labels.
     """
 
     df = df.loc[df["label"].isin(target_labels)].copy()
@@ -267,7 +267,7 @@ def segments_by_labels(
 def sessions_by_labels(
     df: DataFrame[ClipsDF], target_labels: List[int], relabel: bool = False
 ) -> DataFrame[ClipsDF]:
-    """Extract sessions of :var:`df` whose labels are in :var:`target_labels`
+    """Extract sessions of :attr:`df` whose labels are in :attr:`target_labels`
 
     Args:
         df (DataFrame[ClipsDF]): Dataframe of EEG clips
@@ -275,7 +275,7 @@ def sessions_by_labels(
         relabel(bool): Whether to relabel `target_labels` progressively from 0
 
     Returns:
-        DataFrame[ClipsDF]: Subset of :var:`df` with desired labels.
+        DataFrame[ClipsDF]: Subset of :attr:`df` with desired labels.
     """
     label_sets = df.groupby(ClipsDF.session)[ClipsDF.label].apply(set)
     sessions = label_sets.index[label_sets <= set(target_labels)]
@@ -294,7 +294,7 @@ def resample_label(
         df (DataFrame[ClipsDF]): Dataframe of EEG clips or segments
         label (int): Label to resample.
         ratio(float, optional): Ratio of desired samples w.r.t. the total count
-            of other labels. If the desired :var:`ratio` exceeds the label
+            of other labels. If the desired :attr:`ratio` exceeds the label
             counts, then the label is bootstrapped (sampled with replacement),
             otherwise it is downsampled (no replacement). Defaults to 1.
         seed (Optional[int], optional): Random seed. Defaults to None.
