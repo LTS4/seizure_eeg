@@ -1,5 +1,5 @@
 ================================================================================
-EEG pipeline for reproducible ML
+EEG pipeline for reproducible ML on seizure data
 ================================================================================
 
 |build-status|
@@ -8,33 +8,9 @@ EEG pipeline for reproducible ML
     :alt: build status
     :target: https://seizure-eeg.readthedocs.io
 
-To open the road for reproducibility, we implement a parametrized preprocessing
-library providing the functionality required to extract clips in the format
-required by many ML algorithms.  Currently, it is implemented for the TUH
-corpus, and other datasets will be integrated soon.  To simplify adoption, we
-focused on using well know and performant Python libraries, such as pandas_,
-numpy_, and scipy_
-
-.. _pandas: https://pandas.pydata.org/
-.. _numpy: https://numpy.org/
-.. _scipy: https://scipy.org/
-
-Installation
-================================================================================
-
-The code can be pip-installed directly from git, if you have proper
-authentication. Just run::
-
-    pip install git+ssh://git@github.com/LTS4/seizure_eeg.git
-
-Otherwise, you can clone the repository and pip install it::
-
-    git clone git@github.com:LTS4/seizure_eeg.git
-    cd seizure_eeg
-    pip install seizure_eeg
-
-How to use
-================================================================================
+To open the road for reproducibility in seizure-related ML tasks, we implement a
+unified preprocessing library providing the functionality required to extract
+EEG clips in the format required by many ML algorithms.
 
 The package documentation is available on `readthedocs`_.
 
@@ -65,8 +41,33 @@ The creation of clips is provided by `seiz_eeg.clips` and the
 
 More details on parameters in the `Parameters`_ section.
 
+Installation
+================================================================================
+
+The code can be pip-installed directly from git, if you have proper
+authentication. Just run::
+
+    pip install git+ssh://git@github.com/LTS4/seizure_eeg.git
+
+Otherwise, you can clone the repository and pip install it::
+
+    git clone git@github.com:LTS4/seizure_eeg.git
+    cd seizure_eeg
+    pip install seizure_eeg
+
+How to use
+================================================================================
+
 Download and pre-processing
 --------------------------------------------------------------------------------
+
+.. note::
+    Currently, this is implemented for the `TUH
+    seizure corpus`_ (version 1.4.2) and the `CHB-MIT`_ dataset.
+
+.. _`TUH seizure corpus`: https://isip.piconepress.com/projects/tuh_eeg/html/downloads.shtml
+.. _`CHB-MIT`: https://physionet.org/content/chbmit/1.0.0/
+
 
 Data are downloaded to a subfolder of ``raw_path``, declared in the
 source-specific configuration.
@@ -203,42 +204,3 @@ The config file and the dataclasses should provide the following parameters:
 
 .. |config| replace:: ``config.yaml``
 .. _config: https://github.com/LTS4/seizure_eeg/blob/main/config.yaml
-
-Code structure
-================================================================================
-
-.. code-block::
-
-    .
-    ├── LICENSE
-    ├── README.md          <- The top-level README for developers using this
-    │                         project.
-    ├── config.yaml        <- Example configuration file with paths and options
-    │                         for data loading and preprocesing
-    ├── pyproject.toml
-    │
-    ├── docs               <- Folder containing Sphinx directives and figures
-    │
-    ├── seiz_eeg
-    │   ├── __init__.py
-    │   ├── config.py
-    │   ├── dataset.py
-    │   ├── schemas.py
-    │   └── tusz
-    │       ├── __init__.py
-    │       ├── annotations
-    │       │   ├── __init__.py
-    │       │   ├── io.py
-    │       │   └── process.py
-    │       ├── constants.py
-    │       ├── download.py
-    │       ├── io.py
-    │       ├── main.py
-    │       ├── process.py
-    │       ├── signals
-    │       │   ├── __init__.py
-    │       │   ├── io.py
-    │       │   └── process.py
-    │       └── utils.py
-    │
-    └── setup.py           <- Options for package building
