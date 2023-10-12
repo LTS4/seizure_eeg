@@ -2,6 +2,7 @@
 EEG pipeline for reproducible ML
 ================================================================================
 
+https://readthedocs.org/projects/seizure-eeg/badge/?version=latest&style=flat
 
 To open the road for reproducibility, we implement a parametrized preprocessing
 library providing the functionality required to extract clips in the format
@@ -30,6 +31,10 @@ Otherwise, you can clone the repository and pip install it::
 
 How to use
 ================================================================================
+
+The package documentation is available on `readthedocs`_.
+
+.. _`readthedocs`: https://seizure-eeg.readthedocs.io
 
 This package provides the following functionalities:
 
