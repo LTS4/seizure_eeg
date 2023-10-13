@@ -1,5 +1,5 @@
 ================================================================================
-EEG pipeline for reproducible ML
+EEG pipeline for reproducible ML on seizure data
 ================================================================================
 
 |build-status|
@@ -8,33 +8,9 @@ EEG pipeline for reproducible ML
     :alt: build status
     :target: https://seizure-eeg.readthedocs.io
 
-To open the road for reproducibility, we implement a parametrized preprocessing
-library providing the functionality required to extract clips in the format
-required by many ML algorithms.  Currently, it is implemented for the TUH
-corpus, and other datasets will be integrated soon.  To simplify adoption, we
-focused on using well know and performant Python libraries, such as pandas_,
-numpy_, and scipy_
-
-.. _pandas: https://pandas.pydata.org/
-.. _numpy: https://numpy.org/
-.. _scipy: https://scipy.org/
-
-Installation
-================================================================================
-
-The code can be pip-installed directly from git, if you have proper
-authentication. Just run::
-
-    pip install git+ssh://git@github.com/LTS4/seizure_eeg.git
-
-Otherwise, you can clone the repository and pip install it::
-
-    git clone git@github.com:LTS4/seizure_eeg.git
-    cd seizure_eeg
-    pip install seizure_eeg
-
-How to use
-================================================================================
+To open the road for reproducibility in seizure-related ML tasks, we implement a
+unified preprocessing library providing the functionality required to extract
+EEG clips in the format required by many ML algorithms.
 
 The package documentation is available on `readthedocs`_.
 
@@ -65,8 +41,34 @@ The creation of clips is provided by `seiz_eeg.clips` and the
 
 More details on parameters in the `Parameters`_ section.
 
+Installation
+================================================================================
+
+The code can be pip-installed directly from git, if you have proper
+authentication. Just run::
+
+    pip install git+https://github.com/LTS4/seizure_eeg.git
+
+Otherwise, you can clone the repository and pip install it::
+
+    git clone https://github.com/LTS4/seizure_eeg.git
+    cd seizure_eeg
+    pip install seizure_eeg
+
+How to use
+================================================================================
+
 Download and pre-processing
 --------------------------------------------------------------------------------
+
+.. note::
+
+    Currently, this is implemented for the `TUH seizure corpus`_ (version 1.4.2) and the `CHB-MIT`_
+    dataset.
+
+.. _`TUH seizure corpus`: https://isip.piconepress.com/projects/tuh_eeg/html/downloads.shtml
+.. _`CHB-MIT`: https://physionet.org/content/chbmit/1.0.0/
+
 
 Data are downloaded to a subfolder of ``raw_path``, declared in the
 source-specific configuration.
@@ -147,15 +149,18 @@ Parameters
 Many parameters are available for data processing and they shall provided as
 *configuration* dataclasses (specified in ``seiz_eeg.config.py``) to our functions.
 
+The minimal parameter needed are
+- ``dataset``, which specifies the dataset to preprocess.
+- ``raw_root``, which specifies the root folder where the raw data is stored.
+
+.. warning::
+
+    Preprocessing parameters are not yet unified across datasets.
+
 We use OmegaConf_ to merge ``.yaml`` files configuration and cli options in our
-runnable script (``seiz_eeg.preprocess``), and we recommend to use the same
-approach for user-defined code.
-
+runnable script (``seiz_eeg.preprocess``).
 An example of configuration file for TUH Seizure corpus is provided in |config|_.
-These options can be loaded by running ``OmegaConf.load("config.yaml")``,
-which returns a ``DictConfig`` which is compatible with our dataclasses.
-
-The config file and the dataclasses should provide the following parameters:
+The config file, or cli options can provide the following parameters:
 
 .. code-block::
 
@@ -163,10 +168,11 @@ The config file and the dataclasses should provide the following parameters:
     │
     ├── dataset (str):                              Abbrv. of dataset to preprocess. Currently supported:
     │                                                   - tusz: TUH Seizure Corpus
+    │                                                   - chbmit: CHB-MIT Scalp EEG Database
     │
-    ├── raw_path (str):                             Root folder for raw data (downloads)
+    ├── raw_root (str):                             Root folder for raw data (downloads)
     │
-    ├── processed_path (str):                       Root folder for preprocessed data
+    ├── processed_root (str):                       Root folder for preprocessed data
     │
     ├── labels (DataLabelsConf):                    Seizure labels specifications
     │   ├── map (Dict[str, int]):                       Map from string seizure codes to integers, e.g. ``bkgd -> 0`` and ``fnsz -> 1``
@@ -203,42 +209,3 @@ The config file and the dataclasses should provide the following parameters:
 
 .. |config| replace:: ``config.yaml``
 .. _config: https://github.com/LTS4/seizure_eeg/blob/main/config.yaml
-
-Code structure
-================================================================================
-
-.. code-block::
-
-    .
-    ├── LICENSE
-    ├── README.md          <- The top-level README for developers using this
-    │                         project.
-    ├── config.yaml        <- Example configuration file with paths and options
-    │                         for data loading and preprocesing
-    ├── pyproject.toml
-    │
-    ├── docs               <- Folder containing Sphinx directives and figures
-    │
-    ├── seiz_eeg
-    │   ├── __init__.py
-    │   ├── config.py
-    │   ├── dataset.py
-    │   ├── schemas.py
-    │   └── tusz
-    │       ├── __init__.py
-    │       ├── annotations
-    │       │   ├── __init__.py
-    │       │   ├── io.py
-    │       │   └── process.py
-    │       ├── constants.py
-    │       ├── download.py
-    │       ├── io.py
-    │       ├── main.py
-    │       ├── process.py
-    │       ├── signals
-    │       │   ├── __init__.py
-    │       │   ├── io.py
-    │       │   └── process.py
-    │       └── utils.py
-    │
-    └── setup.py           <- Options for package building
