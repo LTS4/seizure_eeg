@@ -62,8 +62,9 @@ Download and pre-processing
 --------------------------------------------------------------------------------
 
 .. note::
-    Currently, this is implemented for the `TUH
-    seizure corpus`_ (version 1.4.2) and the `CHB-MIT`_ dataset.
+
+    Currently, this is implemented for the `TUH seizure corpus`_ (version 1.4.2) and the `CHB-MIT`_
+    dataset.
 
 .. _`TUH seizure corpus`: https://isip.piconepress.com/projects/tuh_eeg/html/downloads.shtml
 .. _`CHB-MIT`: https://physionet.org/content/chbmit/1.0.0/
@@ -148,15 +149,18 @@ Parameters
 Many parameters are available for data processing and they shall provided as
 *configuration* dataclasses (specified in ``seiz_eeg.config.py``) to our functions.
 
+The minimal parameter needed are
+- ``dataset``, which specifies the dataset to preprocess.
+- ``raw_root``, which specifies the root folder where the raw data is stored.
+
+.. warning::
+
+    Preprocessing parameters are not yet unified across datasets.
+
 We use OmegaConf_ to merge ``.yaml`` files configuration and cli options in our
-runnable script (``seiz_eeg.preprocess``), and we recommend to use the same
-approach for user-defined code.
-
+runnable script (``seiz_eeg.preprocess``).
 An example of configuration file for TUH Seizure corpus is provided in |config|_.
-These options can be loaded by running ``OmegaConf.load("config.yaml")``,
-which returns a ``DictConfig`` which is compatible with our dataclasses.
-
-The config file and the dataclasses should provide the following parameters:
+The config file, or cli options can provide the following parameters:
 
 .. code-block::
 
@@ -164,10 +168,11 @@ The config file and the dataclasses should provide the following parameters:
     │
     ├── dataset (str):                              Abbrv. of dataset to preprocess. Currently supported:
     │                                                   - tusz: TUH Seizure Corpus
+    │                                                   - chbmit: CHB-MIT Scalp EEG Database
     │
-    ├── raw_path (str):                             Root folder for raw data (downloads)
+    ├── raw_root (str):                             Root folder for raw data (downloads)
     │
-    ├── processed_path (str):                       Root folder for preprocessed data
+    ├── processed_root (str):                       Root folder for preprocessed data
     │
     ├── labels (DataLabelsConf):                    Seizure labels specifications
     │   ├── map (Dict[str, int]):                       Map from string seizure codes to integers, e.g. ``bkgd -> 0`` and ``fnsz -> 1``
