@@ -1,4 +1,5 @@
 """Pandera schemas for data validation"""
+
 import pandera as pa
 from pandera.typing import DateTime, Index, Series
 
