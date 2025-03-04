@@ -6,8 +6,9 @@ dataset: ???
 root: ???
 
 tusz:
-  version: "v1.5.2"
+  version: "v2.0.3"
 
+  user: ???python -m seiz_eeg.preprocess dataset=tusz tusz.user=$TUSZ_USER tusz.password=$TUSZ_PpW
   password: ???
   force_download: false
 
