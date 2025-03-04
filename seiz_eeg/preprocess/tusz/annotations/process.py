@@ -10,6 +10,7 @@ patient session channel segment  label start_time end_time file_path sampling_ra
 """
 
 import logging
+from datetime import datetime
 from pathlib import Path
 from typing import Dict
 
@@ -32,12 +33,14 @@ def labels_to_annotations(
     edf_path: Path,
     signals_path: Path,
     sampling_rate: int,
+    date: datetime,
 ) -> DataFrame[ClipsLocalDF]:
     """Add [patient, session, date, sampling_rate, signals_path] columns.
     patient, session, and date are extrapolated from edf_path"""
-    df[ClipsLocalDF.patient] = edf_path.parents[1].stem
-    df[ClipsLocalDF.session] = edf_path.stem
-    df[ClipsLocalDF.date] = extract_session_date(edf_path.parents[0].stem)
+    patient, session = edf_path.stem.split("_", maxsplit=1)
+    df[ClipsLocalDF.patient] = patient
+    df[ClipsLocalDF.session] = session
+    df[ClipsLocalDF.date] = date
 
     df[ClipsLocalDF.sampling_rate] = sampling_rate
     df[ClipsLocalDF.signals_path] = str(signals_path.absolute())
@@ -59,9 +62,9 @@ def process_annotations(
     edf_path: Path,
     *,
     label_map: Dict[str, int],
-    binary: bool,
     signals_path: Path,
     sampling_rate: int,
+    date: datetime,
 ) -> DataFrame[ClipsLocalDF]:
     """Read annotations files associated to *edf_path* and add metadata
 
@@ -76,8 +79,8 @@ def process_annotations(
         [type]: [description]
     """
     return (
-        read_labels(edf_path, binary=binary)
-        .pipe(labels_to_annotations, edf_path, signals_path, sampling_rate)
+        read_labels(edf_path)
+        .pipe(labels_to_annotations, edf_path, signals_path, sampling_rate, date)
         .pipe(map_labels, label_map=label_map)
         .set_index(
             [
@@ -87,7 +90,7 @@ def process_annotations(
                 ClipsLocalDF.channel,
             ]
         )
-    )
+    )[["label", "start_time", "end_time", "date", "sampling_rate", "signals_path"]]
 
 
 ####################################################################################################
