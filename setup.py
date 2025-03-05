@@ -33,7 +33,7 @@ setup(
         "pandas",
         "pandera",
         "pyarrow",
-        "pyEDFlib==0.1.34",
+        "pyEDFlib",
         "scipy",
         "omegaconf",
         "pexpect",
