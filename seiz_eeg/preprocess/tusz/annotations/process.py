@@ -20,7 +20,6 @@ from pandera import check_types
 from pandera.typing import DataFrame, Index
 
 from seiz_eeg.preprocess.tusz.annotations.io import read_labels
-from seiz_eeg.preprocess.tusz.utils import extract_session_date
 from seiz_eeg.schemas import ClipsLocalDF, LabelDF
 
 

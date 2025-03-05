@@ -6,7 +6,7 @@ from pandera.typing import DateTime, Index, Series
 from seiz_eeg.constants import RE_CHANNELS, RE_MONTAGES
 
 
-class LabelDF(pa.SchemaModel):
+class LabelDF(pa.DataFrameModel):
     """
     ======= ======= ===== ========== ========
     Columns
@@ -23,7 +23,7 @@ class LabelDF(pa.SchemaModel):
     end_time: Series[float]
 
 
-class ClipsDF(pa.SchemaModel):
+class ClipsDF(pa.DataFrameModel):
     """Dataframe for EEG annotations:
 
     ======= ======= =======  ===== ========== ======== ==== ============= ============
@@ -68,19 +68,19 @@ class ClipsLocalDF(ClipsDF):
     channel: Index[str]
 
 
-class SignalsDF(pa.SchemaModel):
+class SignalsDF(pa.DataFrameModel):
     """Class for eeg signals: columns are channels names and rows are samples"""
 
     channel: Series[float] = pa.Field(alias=RE_CHANNELS, regex=True)
 
 
-class SignalsDiffDF(pa.SchemaModel):
+class SignalsDiffDF(pa.DataFrameModel):
     """Class for eeg signals: columns are names of channels diffs and rows are samples"""
 
     channel: Series[float] = pa.Field(alias=RE_MONTAGES, regex=True)
 
 
-class DigitalSignalsMeta(pa.SchemaModel):
+class DigitalSignalsMeta(pa.DataFrameModel):
     """Class for digital signals metadata"""
 
     channel: Index[str]
