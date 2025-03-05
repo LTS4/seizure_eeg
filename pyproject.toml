@@ -1,62 +1,108 @@
 [build-system]
-requires = ['setuptools', 'wheel']
-build-backend = 'setuptools.build_meta:__legacy__'
 
-#-------------------------------------------------------------------------------
-#--- Pylint --------------------------------------------------------------------
+requires = [
+    "setuptools >= 61.0",
+    "wheel",
+    "setuptools-git-versioning",
+]
+build-backend = 'setuptools.build_meta'
 
-[tool.pylint.master]
-docstring-min-length = 5
+[project]
 
-[tool.pylint.format]
-max-line-length = 100
+description="Data loading and preprocessing of EEG scans for seizure-related ML tasks"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Natural Language :: English",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+]
+requires-python = ">=3.10"
 
-[tool.pylint.basic]
-good-names = [
-    'f',
-    'N',
-    'i',
-    'j',
-    'k',
-    'df',
-    'x',
-    'X',
-    'y',
-    'x0',
-    'X0',
-    'y0',
-    'ex',
-    'lr',
-    'Run',
-    '_',
+name = "seiz_eeg"
+dynamic = ["version"]
+authors = [
+    { name = "William Cappelletti", email = "william.cappelletti@epfl.ch" },
+]
+keywords = ["seizure analysis", "machine learning"]
+readme = "README.rst"
+license = { text = "BSD-3-Clause" }
+
+dependencies = [
+    "click",
+    "numpy",
+    "pandas",
+    "pandera",
+    "pyarrow",
+    "pyEDFlib",
+    "scipy",
+    "omegaconf",
+    "pexpect",
+    "tqdm",
 ]
 
-[tool.pylint.typecheck]
-# List of members which are set dynamically and missed by Pylint inference
-# system, and so shouldn't trigger E1101 when accessed.
-generated-members = ['numpy.*']
+    [project.optional-dependencies]
 
-[tool.pylint.design]
-max-attributes = 10
-max-args = 8
+    dev = ["pylint", "pytest", "black", "isort"]
+    build = ["build", "twine"]
 
-[tool.pylint.message_control]
-disable = [
-    'no-else-break',
-    'no-else-continue',
-    'no-else-raise',
-    'no-else-return',
-]
+    [project.urls]
 
-#-------------------------------------------------------------------------------
-#--- Format --------------------------------------------------------------------
+    Homepage ="https://github.com/LTS4/seizure_eeg"
+    Issues = "https://github.com/LTS4/seizure_eeg/issues"
+
+[tool.setuptools.packages]
+find = {} # Scan the project directory with the default parameters
+
+[tool.setuptools-git-versioning]
+enabled = true
+
+[tool.pylint]
+
+    [tool.pylint.master]
+    docstring-min-length = 5
+
+    [tool.pylint.format]
+    max-line-length = 100
+
+    [tool.pylint.basic]
+    good-names = ['f', 'N', 'n', 'i', 'j', 'k', 'df', 'ax', 'ex', 'lr', 'Run', '_']
+    good-names-rgxs = ['x(\d*|_[\w\d]*)', 'X(\d*|_[\w\d]*)', 'y(\d*|_[\w\d]*)']
+    no-docstring-rgx = '^_|^fit$'
+
+    [tool.pylint.typecheck]
+    # List of members which are set dynamically and missed by Pylint inference
+    # system, and so shouldn't trigger E1101 when accessed.
+    generated-members = ['numpy.*', 'scipy.*', 'sklearn.*']
+
+    [tool.pylint.similarities]
+    min-similarity-lines = 4
+    ignore-imports = true
+    ignore-signatures = true
+
+    [tool.pylint.design]
+    max-attributes = 30
+    max-locals = 25
+    max-args = 30
+
+    [tool.pylint.message_control]
+    disable = [
+        "no-else-break",
+        "no-else-continue",
+        "no-else-raise",
+        "no-else-return",
+    ]
 
 [tool.black]
+
 line-length = 100
-target-version = ['py39']
+target-version = ['py310']
 include = '\.pyi?$'
 
 [tool.isort]
-profile = 'black'
+
+profile = "black"
 multi_line_output = 3
-extend_skip_glob = ['env/*']
+extend_skip_glob = ["env/*"]
