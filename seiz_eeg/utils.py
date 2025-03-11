@@ -1,6 +1,7 @@
-"""Utility functions for EEG Datasets"""
+"""Utility functions for EEG Clipls Datasets"""
 
 import logging
+from pathlib import Path
 from typing import List, Optional
 from warnings import warn
 
@@ -11,6 +12,26 @@ from pandas import IndexSlice as idx
 from pandera.typing import DataFrame
 
 from seiz_eeg.schemas import ClipsDF
+
+
+def rebase_signal_paths(
+    segments_df: DataFrame[ClipsDF], signals_folder: str | Path
+) -> DataFrame[ClipsDF]:
+    """Replace the signal path with the relative path to the signals folder.
+
+    Args:
+        segments_df (DataFrame[ClipsDF]): Dataframe of EEG segments
+        signals_folder (str | Path): Folder containing the EEG signals
+
+    Returns:
+        DataFrame[ClipsDF]: Dataframe with updated signal paths
+    """
+    signals_folder = Path(signals_folder)
+    segments_df[ClipsDF.signals_path] = segments_df[ClipsDF.signals_path].map(
+        lambda x: str(signals_folder / Path(x).name)
+    )
+
+    return segments_df
 
 
 def cut_long_sessions(segments_df: DataFrame[ClipsDF], max_time: float) -> DataFrame[ClipsDF]:
