@@ -1,4 +1,5 @@
 """Pipeline to generate dataset"""
+
 import logging
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -10,7 +11,7 @@ from tqdm import tqdm
 
 from seiz_eeg.preprocess.io import list_all_edf_files
 from seiz_eeg.preprocess.tusz.annotations.process import process_annotations
-from seiz_eeg.preprocess.tusz.signals.io import read_eeg_signals
+from seiz_eeg.preprocess.tusz.signals.io import read_edf_date, read_eeg_signals
 from seiz_eeg.preprocess.tusz.signals.process import preprocess_signals
 from seiz_eeg.schemas import ClipsLocalDF
 
@@ -40,7 +41,6 @@ def process_walk(
     signals_out_folder: Path,
     sampling_rate_out: int,
     label_map: Dict[str, int],
-    binary: bool,
     exclude_patients: Optional[List[str]] = None,
 ) -> DataFrame[ClipsLocalDF]:
     """Precess every file in the root_folder tree and return the dataset of EEG segments"""
@@ -67,20 +67,24 @@ def process_walk(
             if exclude_patients is None or edf_path.parents[1].stem not in exclude_patients:
 
                 if not signals_path.exists() or reprocess:
+                    signals_raw, sampling_rate_in, date = read_eeg_signals(edf_path)
                     # Process signals and save them
                     preprocess_signals(
-                        *read_eeg_signals(edf_path),
+                        signals_raw,
+                        sampling_rate_in=sampling_rate_in,
                         sampling_rate_out=sampling_rate_out,
                     ).to_parquet(signals_path)
+                else:
+                    date = read_edf_date(edf_path)
 
                 # Process annotations
                 annotations_list.append(
                     process_annotations(
                         edf_path,
                         label_map=label_map,
-                        binary=binary,
                         signals_path=signals_path,
                         sampling_rate=sampling_rate_out,
+                        date=date,
                     )
                 )
 

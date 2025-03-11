@@ -1,5 +1,7 @@
 """I/O functions for EDF signals"""
+
 import re
+from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -24,8 +26,15 @@ def format_channel_names(names: List[str]) -> List[Optional[str]]:
     return [format_channel_name(name) for name in names]
 
 
+def read_edf_date(edf_path: Path) -> datetime:
+    try:
+        return pyedflib.EdfReader(str(edf_path)).getStartdatetime()
+    except OSError as err:
+        raise OSError(f"Error from file {edf_path}") from err
+
+
 @check_types
-def read_eeg_signals(edf_path: Path) -> Tuple[DataFrame[SignalsDF], int]:
+def read_eeg_signals(edf_path: Path) -> Tuple[DataFrame[SignalsDF], int, datetime]:
     """Get EEG signals and names from  edf file
 
     Args:
@@ -55,6 +64,7 @@ def read_eeg_signals(edf_path: Path) -> Tuple[DataFrame[SignalsDF], int]:
     nb_samples = edf_reader.getNSamples()
 
     sampling_rates = edf_reader.getSampleFrequencies()
+    date = edf_reader.getStartdatetime()
 
     # Prepare list to be read and validate metadata
     try:
@@ -80,4 +90,4 @@ def read_eeg_signals(edf_path: Path) -> Tuple[DataFrame[SignalsDF], int]:
         columns=EEG_CHANNELS,
     )
 
-    return signals, ref_rate
+    return signals, ref_rate, date

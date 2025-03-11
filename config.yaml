@@ -6,8 +6,9 @@ dataset: ???
 root: ???
 
 tusz:
-  version: "v1.5.2"
+  version: "v2.0.3"
 
+  user: ???python -m seiz_eeg.preprocess dataset=tusz tusz.user=$TUSZ_USER tusz.password=$TUSZ_PpW
   password: ???
   force_download: false
 
@@ -35,7 +36,7 @@ labels:
     bckg: 0 # Background
 
     # SEIZURE LABEL - BINARY
-    seiz: 1
+    seiz: -1
 
     # COMBINED FOCAL
     spsz: 1 # Simple Partial Seizure
@@ -55,8 +56,6 @@ labels:
 
     # EXCLUDED
     mysz: null # Myoclonic Seizure
-
-  binary: false
 
 signals:
   sampling_rate: 250 # Hz

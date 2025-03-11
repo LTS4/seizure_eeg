@@ -120,13 +120,13 @@ The ``seiz_eeg.preprocess.tusz`` module provides code specific to this dataset a
 and EEG measurements.
 
 To download the data, you need to register (free account).
-You will get a password for the ``nedc`` username.
+You will get a password and a username, which we recommend exporting to environment variables `TUSZ_USER` and `TUSZ_PW`.
 The password shall be included in the ``config.yaml`` file, or passed to
 the command line as follows:
 
 .. code-block:: sh
 
-    python -m seiz_eeg.preprocess dataset=tusz tusz.password=$PASSWORD
+    python -m seiz_eeg.preprocess dataset=tusz tusz.user=$TUSZ_USER tusz.password=$TUSZ_PW
 
 If you get a ``"Permission denied, please try again."`` message it is probably
 because your password is wrong.

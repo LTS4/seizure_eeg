@@ -1,4 +1,5 @@
 """I/O functions for annotations files (lbl and tse)"""
+
 import re
 from ast import literal_eval
 from pathlib import Path
@@ -89,7 +90,19 @@ def read_lbl(lbl_path: Path) -> DataFrame[LabelDF]:
 
 
 @check_types
-def read_labels(edf_path: Path, binary: bool) -> DataFrame[LabelDF]:
+def read_csv(csv_path: Path) -> DataFrame[LabelDF]:
+    if not csv_path.exists():
+        raise IOError(f"File not found: {csv_path}")
+
+    return concat_labels(
+        pd.read_csv(csv_path, header=0, comment="#", index_col=False)
+        .drop(columns="confidence")
+        .rename(columns={"stop_time": "end_time"})
+    )
+
+
+@check_types
+def read_labels(edf_path: Path) -> DataFrame[LabelDF]:
     """Retrieve seizure labels parsing the ``.tse[_bi]`` and the ``.lbl[_bi]`` files corresponding
     to the ``.edf`` file at *file_path*.
 
@@ -104,21 +117,10 @@ def read_labels(edf_path: Path, binary: bool) -> DataFrame[LabelDF]:
     Returns:
         DataFrame[LabelSchema]: Dataframe of montage symbols with labels and timestamps
     """
-    tse_suffix = ".tse_bi" if binary else ".tse"
-    lbl_suffix = ".lbl_bi" if binary else ".lbl"
-
-    tse_path = edf_path.with_suffix(tse_suffix)
-    if not tse_path.exists():
-        raise IOError(f"File not found: {tse_path}")
-
-    lbl_path = edf_path.with_suffix(lbl_suffix)
-    if not lbl_path.exists():
-        raise IOError(f"File not found: {lbl_path}")
-
     return pd.concat(
         [
-            read_tse(tse_path),
-            read_lbl(lbl_path),
+            read_csv(edf_path.with_suffix(".csv")),
+            read_csv(edf_path.with_suffix(".csv_bi")).replace("TERM", "global"),
         ]
     )
 

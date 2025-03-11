@@ -33,6 +33,7 @@ def main(cfg: DataConf):
         download(
             version=cfg.tusz.version,
             target=cfg.tusz.raw,
+            user=cfg.tusz.user,
             password=cfg.tusz.password,
         )
 
@@ -48,7 +49,6 @@ def main(cfg: DataConf):
             signals_out_folder=signals_out_folder,
             sampling_rate_out=cfg.signals.sampling_rate,
             label_map=OmegaConf.to_container(cfg.labels.map),
-            binary=cfg.labels.binary,
             exclude_patients=cfg.tusz.excluded_patients.get(split),
         )
 
