@@ -1,4 +1,5 @@
 """Utility functions for EEG Datasets"""
+
 import logging
 from typing import List, Optional
 from warnings import warn
@@ -216,10 +217,19 @@ def sessions_by_seizures(
     else:
         sess_to_keep = []
 
-    num_seiz = segments_df[segments_df[ClipsDF.label] > 0].groupby(ClipsDF.session).size()
+    num_seiz = (
+        segments_df[segments_df[ClipsDF.label] > 0]
+        .groupby(level=[ClipsDF.patient, ClipsDF.session])
+        .size()
+    )
     sess_to_keep += num_seiz[num_seiz.between(low, high)].index.to_list()
+    # sess_to_keep = np.array(sess_to_keep)
 
-    return segments_df.loc[idx[:, sess_to_keep, :], :].copy()
+    return (
+        segments_df.reset_index(level=ClipsDF.segment)
+        .loc[sess_to_keep]
+        .set_index(ClipsDF.segment, append=True)
+    )
 
 
 ################################################################################
@@ -241,7 +251,7 @@ def extract_target_labels(
 
 def _relabel(df: DataFrame[ClipsDF], target_labels: List[int]) -> DataFrame[ClipsDF]:
     lmap = {label: i for i, label in enumerate(target_labels)}
-    df["label"] =  df["label"].map(lmap)
+    df["label"] = df["label"].map(lmap)
     return df
 
 

@@ -1,10 +1,10 @@
 """EEG Data class with common data retrieval"""
+
 import logging
 from typing import Any, Callable, List, Optional, Tuple, Union
 
 import numpy as np
 from numpy.typing import NDArray
-from pandera import check_types
 from pandera.typing import DataFrame
 from tqdm import tqdm
 
@@ -75,7 +75,11 @@ class EEGDataset:
         if self._prefetched:
             return self._prefetched[index]
 
-        label, start_time, end_time, _, s_rate, signals_path, *_ = self.clips_df.iloc[index]
+        if ClipsDF.label in self.clips_df.columns:
+            label, start_time, end_time, _, s_rate, signals_path, *_ = self.clips_df.iloc[index]
+        else:
+            label = np.int64(0)
+            start_time, end_time, _, s_rate, signals_path, *_ = self.clips_df.iloc[index]
 
         start_sample = int(start_time * s_rate)
 
