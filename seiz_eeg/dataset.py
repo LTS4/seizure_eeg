@@ -1,6 +1,7 @@
 """EEG Data class with common data retrieval"""
 
 import logging
+from pathlib import Path
 from typing import Any, Callable, List, Optional, Tuple, Union
 
 import numpy as np
@@ -42,6 +43,7 @@ class EEGDataset:
         self,
         clips_df: DataFrame[ClipsDF],
         *,
+        signals_root: str = "",
         signal_transform: Optional[Callable[[NDArray[np.float_]], Union[NDArray, Any]]] = None,
         label_transform: Optional[Callable[[int], Any]] = None,
         prefetch: bool = False,
@@ -51,6 +53,7 @@ class EEGDataset:
 
         logging.debug("Creating clips from segments")
         self.clips_df = clips_df
+        self.signals_root = Path(signals_root)
 
         # We compute the lenght of each segment
         lenghts = np.unique(self.clips_df[ClipsDF.end_time] - self.clips_df[ClipsDF.start_time])
@@ -91,7 +94,7 @@ class EEGDataset:
             # In this case we return segments instead of clips, note they have different lengths
             end_sample = int(end_time * s_rate)
 
-        signals = read_parquet(signals_path).iloc[start_sample:end_sample]
+        signals = read_parquet(self.signals_root / signals_path).iloc[start_sample:end_sample]
         assert 0 not in signals.shape
 
         # 1. (opt) Subtract pairwise columns
