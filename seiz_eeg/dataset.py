@@ -48,12 +48,14 @@ class EEGDataset:
         label_transform: Optional[Callable[[int], Any]] = None,
         prefetch: bool = False,
         diff_channels: bool = False,
+        return_id: bool = False,
     ) -> None:
         super().__init__()
 
         logging.debug("Creating clips from segments")
         self.clips_df = clips_df
         self.signals_root = Path(signals_root)
+        self.return_id = return_id
 
         # We compute the lenght of each segment
         lenghts = np.unique(self.clips_df[ClipsDF.end_time] - self.clips_df[ClipsDF.start_time])
@@ -80,6 +82,11 @@ class EEGDataset:
 
         if ClipsDF.label in self.clips_df.columns:
             label, start_time, end_time, _, s_rate, signals_path, *_ = self.clips_df.iloc[index]
+        elif self.return_id:
+            label = f"{self.clips_df.index[index][0]}_{self.clips_df.index[index][1]}_{self.clips_df.index[index][2]}"
+            start_time, end_time, _, s_rate, signals_path, *_ = self.clips_df.iloc[
+                index
+            ]
         else:
             label = np.int64(0)
             start_time, end_time, _, s_rate, signals_path, *_ = self.clips_df.iloc[index]
@@ -116,6 +123,8 @@ class EEGDataset:
 
     def _get_output_shape(self) -> Tuple[tuple, tuple]:
         X0, y0 = self[0]
+        if self.return_id:
+            return X0.shape, 0
         return X0.shape, y0.shape
 
     def __len__(self) -> int:
