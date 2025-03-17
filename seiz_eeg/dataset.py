@@ -86,12 +86,12 @@ class EEGDataset:
 
         if ClipsDF.label in self.clips_df.columns:
             label, start_time, end_time, _, s_rate, signals_path, *_ = self.clips_df.iloc[index]
-        elif self.return_id:
-            label = f"{self.clips_df.index[index][0]}_{self.clips_df.index[index][1]}_{self.clips_df.index[index][2]}"
-            start_time, end_time, _, s_rate, signals_path, *_ = self.clips_df.iloc[index]
         else:
             label = np.int64(0)
             start_time, end_time, _, s_rate, signals_path, *_ = self.clips_df.iloc[index]
+
+        if self.return_id:
+            label = "_".join(map(str, self.clips_df.index[index]))
 
         start_sample = int(start_time * s_rate)
 
