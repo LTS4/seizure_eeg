@@ -24,12 +24,16 @@ class EEGDataset:
 
     Args:
         clips_df (DataFrame[ClipsDF]): Pandas dataframe of EEG clips annotations
+        signals_root (str): Path to the root folder containing the EEG signals.
+            Defaults to "" (local folder).
         signal_transform (Callable[[NDArray[float]], NDArray | Any], optional):
             Function to transform signals before they are returned. Defaults to None.
         label_transform (Callable[[int], Any], optional): Function to
             transform labels before they are returned. Defaults to None.
         prefetch (bool, optional): Wether to prefetch all clips. Defaults to False.
         diff_channels (bool, optional): Wether to subtract pairwise channels.
+            Defaults to False.
+        return_id (bool, optional): Wether to return the clip ids instead of labels.
             Defaults to False.
 
     Attributes:
@@ -48,12 +52,14 @@ class EEGDataset:
         label_transform: Optional[Callable[[int], Any]] = None,
         prefetch: bool = False,
         diff_channels: bool = False,
+        return_id: bool = False,
     ) -> None:
         super().__init__()
 
         logging.debug("Creating clips from segments")
         self.clips_df = clips_df
         self.signals_root = Path(signals_root)
+        self.return_id = return_id
 
         # We compute the lenght of each segment
         lenghts = np.unique(self.clips_df[ClipsDF.end_time] - self.clips_df[ClipsDF.start_time])
@@ -83,6 +89,9 @@ class EEGDataset:
         else:
             label = np.int64(0)
             start_time, end_time, _, s_rate, signals_path, *_ = self.clips_df.iloc[index]
+
+        if self.return_id:
+            label = "_".join(map(str, self.clips_df.index[index]))
 
         start_sample = int(start_time * s_rate)
 
@@ -116,6 +125,8 @@ class EEGDataset:
 
     def _get_output_shape(self) -> Tuple[tuple, tuple]:
         X0, y0 = self[0]
+        if self.return_id:
+            return X0.shape, 0
         return X0.shape, y0.shape
 
     def __len__(self) -> int:
